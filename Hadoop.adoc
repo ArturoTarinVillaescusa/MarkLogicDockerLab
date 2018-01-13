@@ -1,0 +1,12 @@
+= C001 Hadoop for storage and Compute
+
+  *Description:* This is a functional user story, and it will be solved during Iteration 2,
+   starting on Wednesday January 17th
+
+  *What is included in this task:* Get to know about the integration of different data sources through Spark.
+
+== https://docs.marklogic.com/guide/mapreduce/quickstart[Getting Started with the MarkLogic Connector for Hadoop in your lab cluster]
+
+
+
+

@@ -1,0 +1,58 @@
+version: '3.3'
+networks:
+  default:
+    external:
+      name: lab-network
+services:
+  mlnode1: 
+    build: .
+    image: ml8:build
+#    volumes:
+#      - ~/dev/docker/volumes/cluster/node1:/var/opt/MarkLogic
+    expose:
+      - "7997"
+      - "7998"
+      - "7999"
+    ports:
+      - "8000:8000"
+      - "8001:8001"
+      - "8002:8002"
+      - "8010:8010"
+    hostname: mlnode1
+    container_name: mlnode1
+  mlnode2:
+    image: ml8:build
+#    volumes:
+#      - ~/dev/docker/volumes/cluster/node2:/var/opt/MarkLogic
+    expose:
+      - "7997"
+      - "7998"
+      - "7999"
+    ports:
+      - "18000:8000"
+      - "18001:8001"
+      - "18002:8002"
+      - "18010:8010"
+    hostname: mlnode2
+    container_name: mlnode2
+    depends_on:
+      - mlnode1
+  mlnode3:
+    image: ml8:build
+#    volumes:
+#      - ~/dev/docker/volumes/cluster/node3:/var/opt/MarkLogic
+    expose:
+      - "7997"
+      - "7998"
+      - "7999"
+    ports:
+      - "28000:8000"
+      - "28001:8001"
+      - "28002:8002"
+      - "28010:8010"
+    hostname: mlnode3
+    container_name: mlnode3
+    depends_on:
+      - mlnode1
+      - mlnode2
+    command: /bin/sh -c "/etc/init.d/MarkLogic start && ./tmp/initialize-ml.sh -u marklogic -p marklogic -r public && ./tmp/add-to-cluster.sh -u admin -p admin 172.21.0.2 172.21.0.2 && tail -f /dev/null"

@@ -1,0 +1,98 @@
+version: '3.3'
+networks:
+  default:
+    external:
+      name: lab-network
+services:
+  ml8node1: 
+    build: .
+    image: ml8:build
+    expose:
+      - "7997"
+      - "7998"
+      - "7999"
+    ports:
+      - "8000:8000"
+      - "8001:8001"
+      - "8002:8002"
+      - "8010:8010"
+    hostname: "ml1.local"
+    container_name: "ml1.local"
+  ml8node2:
+    image: ml8:build
+    expose:
+      - "7997"
+      - "7998"
+      - "7999"
+    ports:
+      - "18000:8000"
+      - "18001:8001"
+      - "18002:8002"
+      - "18010:8010"
+    hostname: "ml2.local"
+    container_name: "ml2.local"
+    links:
+      - ml8node1:ml8node1
+  ml8node3:
+    image: ml8:build
+    expose:
+      - "7997"
+      - "7998"
+      - "7999"
+    ports:
+      - "28000:8000"
+      - "28001:8001"
+      - "28002:8002"
+      - "28010:8010"
+    hostname: "ml3.local"
+    container_name: "ml3.local"
+    links:
+      - ml8node1:ml8node1
+      - ml8node2:ml8node2
+  cloudera:
+    image: cloudera/quickstart:latest
+    hostname: "quickstart.cloudera"
+    container_name: "quickstart.cloudera"
+    command: /usr/bin/docker-quickstart
+    tty: true
+    ports:
+      - "8020:8020"
+      - "8022:22"     # ssh
+      - "7180:7180"   # Cloudera Manager
+      - "8888:8888"   # HUE
+      - "11000:11000" # Oozie
+      - "50070:50070" # HDFS REST Namenode
+      - "2181:2181"
+      - "11443:11443"
+      - "9090:9090"
+      - "8088:8088"   # Yarn
+      - "19888:19888"
+      - "9092:9092"
+      - "8983:8983"
+      - "16000:16000"
+      - "16001:16001"
+      - "42222:22"
+      - "8042:8042"   #
+      - "60010:60010"
+ # db2:
+ #   image: ibmcom/db2express-c:latest
+ #   command: db2start
+ #   ports:
+ #     - "50000:50000"
+ #   environment:
+ #     DB2INST1_PASSWORD: db2inst1-pwd
+ #     LICENSE: accept
+  mysql:
+    image: mysql
+    environment:
+      MYSQL_ROOT_PASSWORD: example
+  oracle:
+    image: webdizz/oracle-xe-11g-sa:latest
+    ports:
+      - "15080:8080"
+      - "1521:1521"
+    environment:
+      - processes=200
+      - DATABASES=sample
+    volumes:
+      - .oracle_data:/u01/app/oracle
