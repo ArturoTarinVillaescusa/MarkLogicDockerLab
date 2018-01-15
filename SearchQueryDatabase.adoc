@@ -123,18 +123,60 @@ image:imagenes/C002_images/imagen06.png[imagen06.png]
 image:imagenes/C002_images/imagen07.png[imagen07.png]
 
 
-=== Create databases and forests using Query Console
+=== Creating databases and forests using Query Console
 
 Query Console is a web-based MarkLogic interface, available at port 8000(ml1.local),18000(ml2.local) and 28000(ml3.local) respectively, that allows you to execute JavaScript or XQuery expressions in MarkLogic.
 
+1- Go to http://192.168.99.100:28000
+2- See that you are viewing Query Console
 image:imagenes/C002_images/imagen08.png[imagen08.png]
+3- In the Content Source drop-down list, view the list of databases that already exist (playground was created on ml2.local)
+ce
+image:imagenes/C002_images/imagen09.png[imagen09.png]
+4- In the Query Type drop-down list, notice the query languages:
 
+image:imagenes/C002_images/imagen11.png[imagen08.png]
 
+5- Now, use the admin API to define a forest named top-songs-1, a databases named top-songs, and then attaches the forest to the database.
+Write this Javascript code in the query console:
+
+    var admin = require('/MarkLogic/admin.xqy');
+
+    var forestConfig = admin.getConfiguration();
+    forestConfig = admin.forestCreate(forestConfig, 'top-songs-1', xdmp.host(), '', '', '');
+    admin.saveConfiguration(forestConfig);
+
+    var dbConfig = admin.getConfiguration();
+    dbConfig = admin.databaseCreate(dbConfig, 'top-songs', xdmp.database('Security'), xdmp.database('Schemas'));
+    admin.saveConfiguration(dbConfig);
+
+    var forestAttachConfig = admin.getConfiguration();
+    forestAttachConfig = admin.databaseAttachForest(forestAttachConfig, xdmp.database('top-songs'), xdmp.forest('top-songs-1'));
+    admin.saveConfiguration(forestAttachConfig);
+
+6- In Query Console, check that you have JavaScript selected as the Query Type.
+
+image:imagenes/C002_images/imagen10.png[imagen10.png]
+
+7- Realize that, for this code (which is defining a new database), the database selected in the Content Source list is irrelevant.
+
+8- Click the Run button, to execute the code.
+
+9- Realize that the return message of your query response was empty is expected, because you did not retrieve any documents from the selected database.
+
+10- Reload the browser page (F5)
+
+11- Look in the Content Source list to see that the top-songs database now appears in the list:
+
+image:imagenes/C002_images/imagen12.png[imagen12.png]
 
 
 === Creating databases and forests using REST API
 
+
+
 == Inserting Data into a Database
+
 == Search
 == Indexes
 == Security
