@@ -157,6 +157,11 @@ image::imagenes/imagen05.png[imagen05.png]
   Hue:      http://192.168.99.100:8888
   Oozie:    http://192.168.99.100:11000
 
+= https://docs.marklogic.com/guide/mapreduce/quickstart#id_16099[Installing the MarkLogic Connector for Hadoop]
+
+
+
+
 
 = PoC backlog
 
