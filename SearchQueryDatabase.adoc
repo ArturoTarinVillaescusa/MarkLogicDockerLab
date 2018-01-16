@@ -123,7 +123,7 @@ image:imagenes/C002_images/imagen06.png[imagen06.png]
 image:imagenes/C002_images/imagen07.png[imagen07.png]
 
 
-=== Creating databases and forests using Query Console
+=== http://docs.marklogic.com/guide/qconsole[Creating databases and forests using Query Console]
 
 Query Console is a web-based MarkLogic interface, available at port 8000(ml1.local),18000(ml2.local) and 28000(ml3.local) respectively, that allows you to execute JavaScript or XQuery expressions in MarkLogic.
 
@@ -171,12 +171,148 @@ image:imagenes/C002_images/imagen10.png[imagen10.png]
 image:imagenes/C002_images/imagen12.png[imagen12.png]
 
 
-=== Creating databases and forests using REST API
+=== http://docs.marklogic.com/guide/rest-dev[Creating databases and forests using REST API]
 
+The REST Client API provides a set of RESTful services for creating, updating, retrieving, deleting and query documents and metadata.
+You can use the REST Client API to work with XML, JSON, text, and binary documents.
 
+REST API client applications interact with MarkLogic Server through a REST API instance, a specially configured HTTP App Server. Each REST API instance is intended to service a single content database and client application.
+
+To sending HTTP request you can use curl or equivalent:
+
+1- To create a new REST instance, send a POST request to the /rest-apis service on port 8002(ml1.local) with a URL of the form "http://host:8002/version/rest-apis":
+
+    http://192.168.99.100:8002/v1/rest-apis
+
+2- The POST body should contain instance configuration information in XML or JSON. Setting the HTTP content-type header to "application/xml" or "application/json" to indicate the content format.
+The configuration data must specify at least a name for the instance. Optionally, you can specify additional instance properties such as a group name, database name, modules database name, and port.
+
+Create the instance content (rest_api.json):
+
+    {
+      "rest-api": {
+        "name": "8060-patents",
+        "database": "patents",
+        "port": "8060",
+        "forests-per-host": 1
+      }
+    }
+
+3- Create the instance and database "patents" with 1 forest/host by sending a POST request to /rest/apis on port 8002:
+
+    curl --anyauth --user marklogic:marklogic -X POST -d@"rest_api/rest_api.json" -i -H "Content-type: application/json" http://192.168.99.100:8002/v1/rest-apis
+
+4- Execute the curl instance in a command prompt.
+5- After a few seconds, see that the response says HTTP/1.1 201 Created:
+
+  HTTP/1.1 401 Unauthorized
+  Server: MarkLogic
+  WWW-Authenticate: Digest realm="public", qop="auth", nonce="35dcdb3dead88e:o4nMbo5VpcN9XD7Z2n+RNA==", opaque="130674700aba9d6e"
+  Content-Type: text/html; charset=utf-8
+  Content-Length: 209
+  Connection: Keep-Alive
+  Keep-Alive: timeout=5
+
+  HTTP/1.1 201 Created
+  Server: MarkLogic
+  Content-Length: 0
+  Connection: Keep-Alive
+  Keep-Alive: timeout=5
+
+6- Now, in the Admin Interface, click the Configure link on the left, to be able to see the "patents" databases listed under Databases, the patents-1 forest listed under Forests, and the 8060-patents application server listed under App Servers:
+
+image:imagenes/C002_images/imagen13.png[imagen13.png]
 
 == Inserting Data into a Database
 
+=== Understanding Marklogic storage
+
+==== Storage Data
+
+Data is stored in MarkLogic as a document. This data model is extremely beneficial for loading content as-is, with no schema required.
+
+Document formats supported are JSON, XML, RDF, text, and binary.
+
+Documents in other formats (e.g. PDF, Word, Excel, PowerPoint, and HTML) can be converted to XML or JSON using MarkLogic's conversion functions.
+
+JSON document example:
+
+    {
+    "recipe":
+      {
+        "name": "tofu soup",
+        "ingredients": ["tofu block", "carrots", "mushrooms", "green onions", "coconut milk"],
+        "directions":
+         {
+           "preparation": "Chop ingredients into medium-size cubes.",
+           "cooking":
+           {
+             "step1": "In a large pot, combine all ingredients.",
+             "step2": "Cook on medium heat for 45 minutes."
+           }
+         }
+      }
+    }
+
+==== URI
+To be able to address any given document in a MarkLogic database, each document has a unique URI (Uniform Resource Identifier). For example, the following URI might be used for the document illustrated above:
+
+    /recipes/tofu-soup.json
+
+The URI is a string that is defined when a document is being loaded. It is common to put some thought into the URI that you will assign to each of your documents, as any directories in a URI can be used to retrieve documents from the database.
+
+The URI does not refer to the physical location of a document in the database, but rather, provides a unique name for retrieving the document.
+
+If another document is inserted at the same URI, it will replace the previous one.
+
+==== Organizing Documents
+Documents can be organized in a database via any directories in the path of a URI and/or via collections.
+
+Specifying directories in the URI of a document provides a way to reference groups of documents in a database based on their URIs.
+
+Example JavaScript reference to documents in a recipes directory:
+
+    xdmp.directory("/recipes/")
+
+Specifying collections for a document provides a way to tag a document with no regard for its URI.
+
+Example collection assignment:
+
+    xdmp.documentAddCollections("/recipes/tofu-soup.json", "vegetarian")
+
+Example JavaScript to reference the documents in a collection named vegetarian:
+
+    fn.collection("vegetarian")
+
+A document can belong to more than one collection.
+
+==== http://docs.marklogic.com/guide/ingestion[Loading Content Into MarkLogic Server]
+
+There are many ways to insert documents into a MarkLogic database. Ways include:
+
+* MarkLogic Content Pump
+* REST API
+* Java API
+* Node.js API
+* XCC
+* XQuery functions
+* JavaScript functions
+* WebDAV
+* MarkLogic Connector for Hadoop
+* Content Processing Framework
+
+=== Inserting Data through Query Console
+
+=== Inserting Data through the REST API
+
+=== Using MarkLogic Content Pump to Bulk Load
+
+
+
+
 == Search
 == Indexes
+== Semantics
+
+== ACID transactions
 == Security

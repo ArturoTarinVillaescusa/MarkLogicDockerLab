@@ -1,0 +1,1 @@
+curl --anyauth --user marklogic:marklogic -X POST -d@"Desktop/rest_api.json" -i -H "Content-type: application/json" http://http://192.168.99.100:8002/v1/rest-apis
