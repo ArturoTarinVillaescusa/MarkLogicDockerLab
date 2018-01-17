@@ -301,16 +301,91 @@ There are many ways to insert documents into a MarkLogic database. Ways include:
 * MarkLogic Connector for Hadoop
 * Content Processing Framework
 
+=== Sharing data with MarkLogic docker containers
+First of all, data files must be loaded to Marklogic containers. For it, use 'docker cp' command
+to copy data from the default docker machine to the Marklogic containers. From default machine commnand line execute:
+
+    docker@default:/c/Users/apastorr/MarkLogicDockerLab$ docker cp data/ ml1.local:/tmp
+
+Now, check if data folder have been copied to /tmp in ml1.local container.
+
+    docker@default:/c/Users/apastorr/MarkLogicDockerLab$ docker exec -it ml1.local b
+    ash
+    [root@ml1 /]# ls
+    anaconda-post.log  dev  home  lib64  mnt  proc  run   srv  tmp  var
+    bin                etc  lib   media  opt  root  sbin  sys  usr
+    [root@ml1 /]# cd tmp
+    [root@ml1 tmp]# ls
+    data  ks-script-Rl3Umm  yum.log
+    [root@ml1 tmp]#
+
+Make the same with the others Marklogic containers.
+
 === Inserting Data through Query Console
 Query Console can be used to insert documents into a MarkLogic database via JavaScript or XQuery.
 
+*Inserting via Javascript*:
 
+* The *xdmp.documentInsert()* function is commonly used to define a new document as it is being written to a database.
+* The *xdmp.documentLoad()* function is commonly used to load a document that already exists, such as for loading a document from the file system.
 
-==== Inserting via JavaScript
+*Inserting via XQuery*:
 
+* The *xdmp:document-insert()* function is commonly used to define a new document as it is being written to a database.
+* The *xdmp:document-load()* function is commonly used to load a document that already exists, such as for loading a document from the file system.
 
+* Load data in top-songs database:
+
+1. In a browser, navigate to Query Console, for example Query Console to ml1.local host(http://192.168.99.100:8000/qconsole/)
+
+2. Click the + button to create a new tab.Select top-songs for the database, and JavaScript as the Query Type.
+3. Enter the following javascript code:
+
+    declareUpdate();
+    xdmp.documentLoad('/tmp/data/top-songs_data/songs/The-Doors+Light-My-Fire.xml')
+
+4. With the top-songs database selected as the content source, press Run.
+5. With the top-songs database still selected, click the Explore button.
+
+image:imagenes/C002_images/imagen14.png[imagen14.png]
+
+6. Modify the JavaScript expression to specify a custom URI and run:
+
+    declareUpdate();
+    xdmp.documentLoad('/tmp/data/top-songs_data/songs/The-Doors+Light-My-Fire.xml', {'uri': '/songs/The-Doors+Light-My-Fire.xml'})
+
+7. Press the Explore button.See that the new document has a URI of /songs/The-Doors+Light-My-Fire.xml:
+
+image:imagenes/C002_images/imagen15.png[imagen15.png]
+
+8. Add a new tab and run the following, to delete the old document (can copy from unit05/ex03e.txt):
+
+    declareUpdate();
+    xdmp.documentDelete('/tmp/data/top-songs_data/songs/The-Doors+Light-My-Fire.xml')
+
+9. Press the Explore button, to see that the document has been deleted:
+
+image:imagenes/C002_images/imagen16.png[imagen16.png]
+
+10. Load all of the top-songs documents from the file system, specifying custom URIs:
+
+    declareUpdate();
+    var pathToSongDocs = '/tmp/data/top-songs_data/songs';
+    var pathToImages = '/tmp/data/top-songs_data/images';
+    var xmlDocs = xdmp.filesystemDirectory(pathToSongDocs);
+    var binaryDocs = xdmp.filesystemDirectory(pathToImages);
+    xmlDocs.forEach(function(doc) {
+      xdmp.documentLoad(doc.pathname, {'uri': '/songs/' + doc.filename})
+    });
+    binaryDocs.forEach(function(doc) {
+      xdmp.documentLoad(doc.pathname, {'uri': '/images/' + doc.filename})
+    });
+
+image:imagenes/C002_images/imagen17.png[imagen17.png]
 
 === Inserting Data through the REST API
+Documents can be written to a MarkLogic database through the REST API by using the REST API documents service. Specifically, a PUT can be used to specify the URI and content for a document.
+
 
 === Using MarkLogic Content Pump to Bulk Load
 
