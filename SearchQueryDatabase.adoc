@@ -302,16 +302,23 @@ There are many ways to insert documents into a MarkLogic database. Ways include:
 * Content Processing Framework
 
 === Inserting Data through Query Console
+Query Console can be used to insert documents into a MarkLogic database via JavaScript or XQuery.
+
+
+
+==== Inserting via JavaScript
+
+
 
 === Inserting Data through the REST API
 
 === Using MarkLogic Content Pump to Bulk Load
 
 
-
-
 == Search
 == Indexes
+=== Indexing
+=== Search with indexes
 == Semantics
 
 == ACID transactions
