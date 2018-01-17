@@ -66,6 +66,7 @@ image::imagenes/imagen07.png[imagen07.png]
 
     JAVA_HOME : The root of your JRE installation.
 
+
 image::imagenes/imagen07.png[imagen07.png]
 
   Use the following procedure to install the MarkLogic Connector for Hadoop. You might need to modify some of the
@@ -115,7 +116,7 @@ image::imagenes/imagen07.png[imagen07.png]
 
   As soon as we get the whole loop we will make these steps into the Dockerfile, and also will rewrite this documentation
   accoring to the changes
-  ---
+  ---````
 
   Before using the MarkLogic Connector for Hadoop with your Hadoop installation for the first time, set the
   environment variables described in this section. Only HADOOP_CLASSPATH is required, but the rest of this guide
