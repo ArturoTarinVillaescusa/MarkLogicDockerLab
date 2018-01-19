@@ -50,13 +50,12 @@ image::imagenes/imagen07.png[imagen07.png]
 
 === https://docs.marklogic.com/guide/mapreduce/quickstart#id_16099[Installing the MarkLogic Connector for Hadoop]
 
-  [NOTE]
-  ===
-  Following vendor's documentation, adding links to the source that I've read.
+[NOTE]
+====
+*Following vendor's documentation, adding links to the source that I've read.*
 
-  As soon as we get the whole loop we will make these steps into the Dockerfile, and also will rewrite this documentation
-  accoring to the changes
-  ===
+*As soon as we get the whole loop we will make these steps into the Dockerfile, and also will rewrite this documentation accoring to the changes*
+====
 
   These instructions assume you have the following environment variables set:
 
@@ -110,13 +109,12 @@ image::imagenes/imagen07.png[imagen07.png]
 
 === https://docs.marklogic.com/guide/mapreduce/quickstart#id_16099[Configuring Your Environment to Use the Connector]
 
-  [NOTE]
-  ---
-  Following vendor's documentation, adding links to the source that I've read.
+[NOTE]
+====
+*Following vendor's documentation, adding links to the source that I've read.*
 
-  As soon as we get the whole loop we will make these steps into the Dockerfile, and also will rewrite this documentation
-  accoring to the changes
-  ---````
+*As soon as we get the whole loop we will make these steps into the Dockerfile, and also will rewrite this documentation accoring to the changes*
+====
 
   Before using the MarkLogic Connector for Hadoop with your Hadoop installation for the first time, set the
   environment variables described in this section. Only HADOOP_CLASSPATH is required, but the rest of this guide
@@ -148,18 +146,105 @@ image::imagenes/imagen07.png[imagen07.png]
 
 === https://docs.marklogic.com/guide/mapreduce/quickstart#id_92175[Running the HelloWorld Sample Application]
 
-  [NOTE]
-  ---
-  Following vendor's documentation, adding links to the source that I've read.
+[NOTE]
+====
+*Following vendor's documentation, adding links to the source that I've read.*
 
-  As soon as we get the whole loop we will make these steps into the Dockerfile, and also will rewrite this documentation
-  accoring to the changes
-  ---
-
+*As soon as we get the whole loop we will make these steps into the Dockerfile, and also will rewrite this documentation accoring to the changes*
+====
 
 The section walks through configuring and running a simple HelloWorld sample job, assuming MarkLogic Server and
 Apache Hadoop are installed on the same single node, as described in Installing the MarkLogic Connector for Hadoop.
 
+==== https://hadoop.apache.org/docs/stable/hadoop-project-dist/hadoop-common/SingleCluster.html[Install a single node Hadoop cluster in ml1.local]
+
+[source]
+----
+
+root@atarinvi:/home/atarinvi/Documentos/2018-01-17 eDIN/MarkLogicDockerLab/marklogic-cluster# docker exec -it ml1.local bash
+[root@ml1 /]#
+
+[root@ml1 /]# cd space/marklogic/
+[root@ml1 /]# wget http://ftp.cixug.es/apache/hadoop/common/current/hadoop-3.0.0.tar.gz
+[root@ml1 /]# tar xvfz hadoop-3.0.0.tar.gz
+[root@ml1 /]# cd hadoop-3.0.0
+[root@ml1 hadoop-3.0.0]# chmod +x etc/hadoop/*.sh
+[root@ml1 hadoop-3.0.0]# vi etc/hadoop/hadoop-env.sh
+
+[root@ml1 hadoop-3.0.0]# etc/hadoop/hadoop-env.sh
+
+[root@ml1 hadoop-3.0.0]# bin/hadoop jar share/hadoop/mapreduce/hadoop-mapreduce-examples-3.0.0.jar grep input output 'dfs[a-z.]+'
+
+[root@ml1 hadoop-3.0.0]# cat output/part-r-00000
+1	dfsadmin
+
+
+[root@ml1 hadoop-3.0.0]# vi etc/hadoop/core-site.xml
+. . .
+<configuration>
+    <property>
+        <name>fs.defaultFS</name>
+        <value>hdfs://localhost:9000</value>
+    </property>
+</configuration>
+
+[root@ml1 hadoop-3.0.0]# vi etc/hadoop/hdfs-site.xml
+
+. . .
+
+<configuration>
+    <property>
+        <name>dfs.replication</name>
+        <value>1</value>
+    </property>
+</configuration>
+
+[root@ml1 hadoop-3.0.0]# bin/hdfs namenode -format
+
+[root@ml1 hadoop-3.0.0]# groupadd hdfs
+[root@ml1 hadoop-3.0.0]# useradd hdfs -g hdfs
+[root@ml1 hadoop-3.0.0]# passwd hdfs
+Changing password for user hdfs.
+New password:
+BAD PASSWORD: The password is shorter than 8 characters
+Retype new password:
+passwd: all authentication tokens updated successfully.
+
+[root@ml1 hadoop-3.0.0]# yum install openssh-clients
+
+[root@ml1 hadoop-3.0.0]# su - hdfs
+Last login: Fri Jan 19 08:47:29 UTC 2018 on pts/0
+[hdfs@ml1 ~]$ cd /space/marklogic/hadoop-3.0.0
+[hdfs@ml1 marklogic]$ chown -r hdfs.hdfs hadoop-3.0.0
+
+[hdfs@ml1 hadoop-3.0.0]$ sbin/start-dfs.sh
+Starting namenodes on [localhost]
+localhost: /space/marklogic/hadoop-3.0.0/libexec/hadoop-functions.sh: line 981: ssh: command not found
+Starting datanodes
+localhost: /space/marklogic/hadoop-3.0.0/libexec/hadoop-functions.sh: line 981: ssh: command not found
+Starting secondary namenodes [ml1.local]
+ml1.local: /space/marklogic/hadoop-3.0.0/libexec/hadoop-functions.sh: line 981: ssh: command not found
+
+
+   91  ssh localhost
+   92  uname -n
+   93  uname -a
+   95  yum install openssh
+   96  ssh
+   97  yum install openssh-client
+   98  yum install openssh-server
+   99  service ssh status
+  100  service ssh start
+  101  sudo service ssh start
+  102  ssh
+  103  vi /etc/ssh/sshd_config
+  104  sudo service ssh start
+  105  service ssh start
+  106  systemctl start ssh.service
+
+---
+
+==== Run the HelloWorld Sample connecting the MarkLogic node located in ml1.local to the Hadoop single node cluster installed in the same ml1.local node
 
 The following steps are covered:
 
@@ -365,17 +450,18 @@ If you do not see the expected output, see the tips in Troubleshooting and Debug
 
 === https://docs.marklogic.com/guide/mapreduce/quickstart#id_54760[Making the Connector Available Across a Hadoop Cluster]
 
-  [NOTE]
-  ===
-  Following vendor's documentation, adding links to the source that I've read.
+[NOTE]
+====
+*Following vendor's documentation, adding links to the source that I've read.*
 
-  THIS IS THE SPECTED PRODUCTION SCENARIO: MARKLOGIC CLUSTER IN PRODUCTION SHOULD BE EXPECTED TO BE MOVING DATA
-  TO AND FROM A HADOOP CLUSTER, NOT TO A LOCAL HADOOP PROCESS!
+*THIS IS THE SPECTED PRODUCTION SCENARIO: MARKLOGIC CLUSTER IN PRODUCTION SHOULD BE EXPECTED TO BE MOVING DATA
+   TO AND FROM A HADOOP CLUSTER, NOT TO A LOCAL HADOOP PROCESS!*
 
-  FOLLOWED A MESSY DOCUMENTATION, USED AN OPENSOURCE GIT PROJECT PROVIDED AND FOUND AN ERROR.
+*FOLLOWED A MESSY DOCUMENTATION, USED AN OPENSOURCE GIT PROJECT PROVIDED AND FOUND AN ERROR.*
 
-  STILL TRYING TO FIX IT
-  ===
+*STILL TRYING TO FIX IT*
+====
+
 
   When you submit a MapReduce job to run on an Apache Hadoop cluster, the job resources must be accessible by the
   master Job Tracker node and all worker nodes. Job resources include the job JAR file, configuration files, and
