@@ -334,7 +334,7 @@ Query Console can be used to insert documents into a MarkLogic database via Java
 * The *xdmp:document-insert()* function is commonly used to define a new document as it is being written to a database.
 * The *xdmp:document-load()* function is commonly used to load a document that already exists, such as for loading a document from the file system.
 
-* Load data in top-songs database:
+==== Load data in top-songs database:*
 
 1. In a browser, navigate to Query Console, for example Query Console to ml1.local host(http://192.168.99.100:8000/qconsole/)
 
@@ -386,15 +386,160 @@ image:imagenes/C002_images/imagen17.png[imagen17.png]
 === Inserting Data through the REST API
 Documents can be written to a MarkLogic database through the REST API by using the REST API documents service. Specifically, a PUT can be used to specify the URI and content for a document.
 
+*Writing an XML Document*
 
-=== Using MarkLogic Content Pump to Bulk Load
+An XML document can written to a MarkLogic database through a REST API instance by setting the content type to be application/xml, providing the XML, and, optionally, specifying a URI for the document being inserted.
+
+    curl --anyauth --user admin:admin -X PUT -i -H "Content-Type: application/xml" -d "<patent><title>Waterski drone</title><inventor>Ruth</inventor><description>Amazingly small but powerful drone for waterskiing without a boat</description></patent>" "http://localhost:8060/v1/documents?uri=/patents/waterski_drone.xml"
+
+*Writing an JSON Document*
+
+JSON document can written to a MarkLogic database through a REST API instance by setting the content type to be application/json, providing the JSON, and, optionally, specifying a URI for the document being inserted.
+
+    curl --anyauth --user admin:admin -X PUT -i -H "Content-Type: application/json" -d '{"patent": {"title": "Waterski drone", "inventor": "Ruth", "description": "Amazingly small but powerful drone for waterskiing without a boat"}}' "http://localhost:8060/v1/documents?uri=/patents/waterski_drone.json"
+
+*Inserting a Document from the File System*
+
+A document on the file system can be inserted into a MarkLogic database through a REST API instance through the use of the -T option, specifying the location of the file on the file system, and, optionally, specifying a URI for the document being inserted.
+
+    curl --anyauth --user admin:admin -X PUT -i -H "Content-Type: application/json" -T Desktop/mls-fundamentals/unit05/patents_data/airless_diving.json "http://localhost:8060/v1/documents?uri=/patents/airless_diving.json"
+
+*Accesing a Document*
+
+To access a document through the REST API, its URI can be referenced with a GET.
+
+    curl --anyauth --user admin:admin -X GET "http://localhost:8060/v1/documents?uri=/patents/airless_diving.json"
 
 
-== Search
+
+=== https://docs.marklogic.com/guide/mlcp[Using MarkLogic Content Pump to Bulk Load]
+
+==== https://docs.marklogic.com/guide/mlcp/install[Installation]
+
+*Installing mlcp on ml1.local host:*
+
+0. Enter to ssh ml1.local host
+
+    docker exec -it ml1.local bash
+
+1. Download mlcp from http://developer.marklogic.com/products/mlcp
+2. Unzip mlcp-Hadoop2-1.3-2-bin.zip
+3. Put the mlcp bin directory on your path
+
+    export PATH=${PATH}:/tmp/mlcp-Hadoop2-1.3-2/bin
+
+4. If you plan to use mlcp in distributed mode, you must have a Hadoop installation and must configure your environment so mlcp can find your Hadoop installation:
+    https://docs.marklogic.com/guide/mlcp/install#id_90074
+
+==== Local mode
+
+*Use mlcp to bulk load documents into the star-wars database*
+
+1. Set up an XDBC server so that MLCP will be able to communicate with the star-wars database:
+
+    In the Admin Interface (http://localhost:8001), select Configure - Groups - Default - App Servers.
+
+    Select the Create XDBC tab.
+
+    For xdbc server name, enter 8070-star-wars.
+
+    For root, enter /.
+
+    For port, enter 8070.
+
+    For modules, leave (file system) selected.
+
+    For database, select star-wars.
+
+    Click the ok button.
+
+    Click the Configure link (far left), to see the new XDBC server listed on the summary page:
+
+2. Use mlcp command in ml1.local host to load documents into the star-wars databse:
+
+    mlcp.sh import -mode local -host 192.168.99.100 -port 8070 -username marklogic -password marklogic -input_file_path /tmp/data/star-wars_data -output_uri_replace "tmp/data/star-wars_data/data,'character',/tmp/data/star-wars_data/images,'image'"
+
+3. See that the commnad ran succesfully, loading 51 documents:
+
+4. In Query Console, select the star-wars database and click the explore button to see all documents:
+
+
+==== Distributed mode (in COO1 Hadoop task)
+
+== http://docs.marklogic.com/guide/search-dev.pdf[Search]
+
+=== http://docs.marklogic.com/js/cts/constructors[Search query using Javascript functions]
+
+In query console, select patents database and query type javascript
+
+1. Simple word search
+
+    cts.search("small")
+
+2. Json property word search
+
+    cts.search(cts.jsonPropertyWordQuery("inventor","ruth"))
+
+3. Return a query specifying the set difference of the matches specified by two sub-queries
+
+    cts.search(cts.andNotQuery(
+          cts.wordQuery("small"),
+          cts.wordQuery("drone")))
+
+4. Returns a query specifying the intersection of the matches specified by the sub-queries.
+
+    cts.search(cts.andQuery(["small",
+      cts.directoryQuery("/patents/", "1")]))
+
+5. Search document by URIs
+
+    cts.search(cts.documentQuery("/patents/airless_diving.json"))
+
+=== http://docs.marklogic.com/cts.documentQuery[Search query using XQuery function]
+
+1. Simple word search
+
+    cts:search(fn:doc(), "diving")
+
+2. Json property word search
+
+    cts:search(fn:doc(), cts:json-property-word-query("inventor", "tamas"))
+
+3. Find docments on directory
+
+    cts:search(fn:doc(), cts:directory-query("/patents/"))
+
+4. Boosting relevance score with a second query relevance (the first 10)
+
+    cts:search(fn:collection(),
+           cts:boost-query(cts:word-query("small"),
+                           cts:word-query("drone", (), 10.0)
+           )
+         )
+
+=== http://docs.marklogic.com/cts/constructors[Search API XQuery]
+
+1. Import search api module
+
+    import module namespace search = "http://marklogic.com/appservices/search" at "/MarkLogic/appservices/search/search.xqy";
+    search:search("small")
+
+2. Realize that the result could be used by application code to display the number of documents returned, as well as highlighting and snippets for the matches.
+
+=== http://docs.marklogic.com/REST/client/search[REST API search service]
+
+1. Simple word search
+
+    curl --anyauth --user marklogic:marklogic -X GET "http://192.1
+    68.99.100:8060/v1/search?q=diving"
+
 == Indexes
+
 === Indexing
 === Search with indexes
+
 == Semantics
+
 
 == ACID transactions
 == Security
