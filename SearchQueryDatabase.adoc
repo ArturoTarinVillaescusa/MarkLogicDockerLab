@@ -418,24 +418,26 @@ To access a document through the REST API, its URI can be referenced with a GET.
 
 *Installing mlcp on ml1.local host:*
 
-0. Enter to ssh ml1.local host
+0) Enter to ssh ml1.local host
 
     docker exec -it ml1.local bash
 
-1. Download mlcp from http://developer.marklogic.com/products/mlcp
-2. Unzip mlcp-Hadoop2-1.3-2-bin.zip
-3. Put the mlcp bin directory on your path
+1) Download mlcp from http://developer.marklogic.com/products/mlcp
+2) Unzip mlcp-Hadoop2-1.3-2-bin.zip
+3) Put the mlcp bin directory on your path
 
     export PATH=${PATH}:/tmp/mlcp-Hadoop2-1.3-2/bin
 
-4. If you plan to use mlcp in distributed mode, you must have a Hadoop installation and must configure your environment so mlcp can find your Hadoop installation:
+4) If you plan to use mlcp in distributed mode, you must have a Hadoop installation and must configure your environment so mlcp can find your Hadoop installation:
     https://docs.marklogic.com/guide/mlcp/install#id_90074
+
+image:imagenes/C002_images/imagen18.png[imagen18.png]
 
 ==== Local mode
 
 *Use mlcp to bulk load documents into the star-wars database*
 
-1. Set up an XDBC server so that MLCP will be able to communicate with the star-wars database:
+1) Set up an XDBC server so that MLCP will be able to communicate with the star-wars database:
 
     In the Admin Interface (http://localhost:8001), select Configure - Groups - Default - App Servers.
 
@@ -455,14 +457,17 @@ To access a document through the REST API, its URI can be referenced with a GET.
 
     Click the Configure link (far left), to see the new XDBC server listed on the summary page:
 
-2. Use mlcp command in ml1.local host to load documents into the star-wars databse:
+2) Use mlcp command in ml1.local host to load documents into the star-wars databse:
 
     mlcp.sh import -mode local -host 192.168.99.100 -port 8070 -username marklogic -password marklogic -input_file_path /tmp/data/star-wars_data -output_uri_replace "tmp/data/star-wars_data/data,'character',/tmp/data/star-wars_data/images,'image'"
 
-3. See that the commnad ran succesfully, loading 51 documents:
+3) See that the commnad ran succesfully, loading 51 documents:
 
-4. In Query Console, select the star-wars database and click the explore button to see all documents:
+image:imagenes/C002_images/imagen19.png[imagen19.png]
 
+4) In Query Console, select the star-wars database and click the explore button to see all documents:
+
+image:imagenes/C002_images/imagen20.png[imagen20.png]
 
 ==== Distributed mode (in COO1 Hadoop task)
 
@@ -472,26 +477,34 @@ To access a document through the REST API, its URI can be referenced with a GET.
 
 In query console, select patents database and query type javascript
 
-1. Simple word search
+1) Simple word search
 
     cts.search("small")
 
-2. Json property word search
+image:imagenes/C002_images/imagen21.png[imagen21.png]
+
+2) Json property word search
 
     cts.search(cts.jsonPropertyWordQuery("inventor","ruth"))
 
-3. Return a query specifying the set difference of the matches specified by two sub-queries
+image:imagenes/C002_images/imagen22.png[imagen22.png]
+
+3) Returns a query specifying the set difference of the matches specified by two sub-queries
 
     cts.search(cts.andNotQuery(
           cts.wordQuery("small"),
           cts.wordQuery("drone")))
 
-4. Returns a query specifying the intersection of the matches specified by the sub-queries.
+image:imagenes/C002_images/imagen23.png[imagen23.png]
+
+4) Returns a query specifying the intersection of the matches specified by the sub-queries.
 
     cts.search(cts.andQuery(["small",
       cts.directoryQuery("/patents/", "1")]))
 
-5. Search document by URIs
+image:imagenes/C002_images/imagen24.png[imagen24.png]
+
+5) Search document by URIs
 
     cts.search(cts.documentQuery("/patents/airless_diving.json"))
 
@@ -524,7 +537,10 @@ In query console, select patents database and query type javascript
     import module namespace search = "http://marklogic.com/appservices/search" at "/MarkLogic/appservices/search/search.xqy";
     search:search("small")
 
+
 2. Realize that the result could be used by application code to display the number of documents returned, as well as highlighting and snippets for the matches.
+
+image:imagenes/C002_images/imagen25.png[imagen25.png]
 
 === http://docs.marklogic.com/REST/client/search[REST API search service]
 
@@ -533,13 +549,126 @@ In query console, select patents database and query type javascript
     curl --anyauth --user marklogic:marklogic -X GET "http://192.1
     68.99.100:8060/v1/search?q=diving"
 
-== Indexes
+image:imagenes/C002_images/imagen26.png[imagen26.png]
 
-=== Indexing
-=== Search with indexes
+== https://docs.marklogic.com/guide/concepts/indexing[Indexes]
+Marklogic provides baseline indexing of the words and structure of every document that gets loaded. As a document gets loaded into MarkLogic database, Marklogic creates an index of all os the words in the document, as well as the structure of the document.
 
-== Semantics
+Along with the baseline indexing of a document's words and structure, additional indexes can be defined for a database, to speed up the performance of an application. Which indexes would help the performance of a given application depend on the application itself.
+In addition, some MarkLogic search features, such facets and semantics, require that supporting indexes exist.
+
+In general, the cost of supporting additional indexes is increased disk space and document load times. As more and more indexes are maintained, search performance increases and document load speed decreases.
+
+=== Range Indexes
+Range indexes enable you to add search conditions based on inequalities (for example, price < 100.00 or date ? 2007-01-01). In some cases, documents can incorporate numeric, date or other typed information.
+Specifying range indexes for these elements and/or attributes will substantially accelerate the evaluation of these queries.
+
+
+==== Search with indexes
+Defining a range index also allows you to use the range query constructors (cts:element-range-query and cts:element-attribute-range-query) in cts:search operations, making it easy to compose complex range-query expressions to use in searches. For details, see the Using Range Queries in cts:query Expressions chapter in the Search Developer's Guide.
+
+==== Element Range Index
+A range index on a XML element or JSON property
+
+1) In the Admin Interface (http://localhost:8001), select Configure - Databases - star-wars.
+
+2) In the left navigation, select Element Range Indexes.
+
+3) Select the Add tab.
+
+4) For scalar type, select string.
+
+5) For localname, enter name (document json property)
+
+6) Click the ok button.
+
+image:imagenes/C002_images/imagen27.png[imagen27.png]
+
+7) To see that the element range index now exists, in Query Console, run the following (can copy from unit08/ex02.txt), with the database set to star-wars and the Query Type set to JavaScript:
+
+    cts.search(cts.jsonPropertyRangeQuery("name", "<", "e"));
+
+8) Return all names that begin for a letter < e.
+
+image:imagenes/C002_images/imagen28.png[imagen28.png]
+
+9) Create new element range indexes with other properties:
+
+image:imagenes/C002_images/imagen29.png[imagen29.png]
+
+image:imagenes/C002_images/imagen30.png[imagen30.png]
+
+image:imagenes/C002_images/imagen31.png[imagen31.png]
+
+For xml files:
+
+1) Check xml structure in top-songs database.
+
+image:imagenes/C002_images/imagen32.png[imagen32.png]
+
+2) In the Admin Interface (http://localhost:8001), select Configure - Databases - top-songs.
+
+3) In the left navigation, select Element Range Indexes.
+
+4) Create a range element index for the xml element week:
+
+image:imagenes/C002_images/imagen33.png[imagen33.png]
+
+image:imagenes/C002_images/imagen34.png[imagen34.png]
+
+
+==== Attribute Range Index
+A range index on an attribute in an XML element.
+
+Following before steps but selecting Attribute Range Indexes instead.
+
+image:imagenes/C002_images/imagen35.png[imagen35.png]
+
+image:imagenes/C002_images/imagen36.png[imagen36.png]
+
+image:imagenes/C002_images/imagen37.png[imagen37.png]
+
+==== Path Range Index
+A range index on an XML element, XML attribute, or JSON property as defined by an XPath expression.
+You can create the same type of index with a path range index as you can with an element or attribute range index. Path range indexes are useful in circumstances in which an element or attribute range index will not work. For example, you may have documents with the same element name appearing under different parent elements and you only want to index the elements appearing under one of the parent elements. In this case, a path range index is required to correctly index that element.
+
+1) Create a path namespace:
+
+image:imagenes/C002_images/imagen38.png[imagen38.png]
+
+2) Create a path range index:
+
+image:imagenes/C002_images/imagen39.png[imagen39.png]
+
+3) Search path range index query:
+
+image:imagenes/C002_images/imagen40.png[imagen40.png]
+
+==== Observaciones
+No se ha apreciado una gran diferencia en el espacio ocupado antes y despues de indexar las diferentes bases de datos.
+
+=== https://docs.marklogic.com/guide/search-dev/wildcard#id_61884[Wildcard searches]
+Wildcard searches use character indexes, lexicons, and trailing wildcard indexes to speed performance. To ensure that wildcard searches are fast, you should enable at least one wildcard index (three character searches, trailing wildcard searches, two character searches, and/or one character searches) and fast element character searches (if you want fast searches within specific elements) in the Admin Interface database configuration screen. Wildcard searches are disabled by default. If you enable character indexes, you should plan on allocating an additional amount of disk space approximately three times the size of the source content.
+
+* *"The three character searches index combined with the word lexicon provides the best performance for most queries."*
+
+==== Three character searches index
+
+
+==== Word Lexicons
+MarkLogic Server allows you to create a word lexicon that is restricted to a particular XML element, XML attribute, JSON property, or field. You can also define a field word lexicon across a collation. A word lexicon stores all of the unique words that are stored in the specified element, attribute, or JSON property.
+Word lexicons are used in wildcard searches (when wildcarding is enabled).
+
+
+
+==== Observaciones
+Al activar los indices que permiten usar wildcards, se incrementa en más del doble el tamaño ocupado por la base de datos.
+As with all indexing, choosing which indexes to use is a trade-off. Enabling more indexes provides improved query performance, but uses more disk space and increases load and reindexing time. For most environments where wildcard searches are required, MarkLogic recommends enabling the three character searches and a codepoint collation word lexicon, but disabling one and two character searches.
+
+== https://docs.marklogic.com/guide/semantics[Semantics]
+=== Triple Index
+=== SPARQL
 
 
 == ACID transactions
-== Security
+
