@@ -654,18 +654,55 @@ Wildcard searches use character indexes, lexicons, and trailing wildcard indexes
 
 ==== Three character searches index
 
+1) Select star-wars database in the admin interface.
+
+2) In the configure tab you can find the three character searches index. Change it to true value.
+
+image:imagenes/C002_images/imagen41.png[imagen41.png]
 
 ==== Word Lexicons
 MarkLogic Server allows you to create a word lexicon that is restricted to a particular XML element, XML attribute, JSON property, or field. You can also define a field word lexicon across a collation. A word lexicon stores all of the unique words that are stored in the specified element, attribute, or JSON property.
 Word lexicons are used in wildcard searches (when wildcarding is enabled).
 
+1) Create a element word lexicon for the "alliance" json property in the star-wars database:
 
+image:imagenes/C002_images/imagen42.png[imagen42.png]
 
-==== Observaciones
-Al activar los indices que permiten usar wildcards, se incrementa en más del doble el tamaño ocupado por la base de datos.
+==== Annotations about performance and disk space
+
 As with all indexing, choosing which indexes to use is a trade-off. Enabling more indexes provides improved query performance, but uses more disk space and increases load and reindexing time. For most environments where wildcard searches are required, MarkLogic recommends enabling the three character searches and a codepoint collation word lexicon, but disabling one and two character searches.
 
+* Without active wildcards index:
+
+image:imagenes/C002_images/imagen43.png[imagen43.png]
+
+        You can't use wildcards in searches:
+
+image:imagenes/C002_images/imagen44.png[imagen44.png]
+
+* Disk space before and after indexing to allow wildcards searches.
+
+    Before indexing. Usage star-wars dabatase disk space: 0.007GB
+
+image:imagenes/C002_images/imagen45.png[imagen45.png]
+
+    After indexing (all wildcards index to true and element word lexicon created):
+    Usage star-wars dabatase disk space: 0.017GB
+
+image:imagenes/C002_images/imagen46.png[imagen46.png]
+
+* Performance search query test.
+
+    Only three characters index activated. Query time: 4.482ms
+
+image:imagenes/C002_images/imagen47.png[imagen47.png]
+
+    All wildcards index to true and element word lexicon created. Query time: 0.968ms
+
+image:imagenes/C002_images/imagen48.png[imagen48.png]
+
 == https://docs.marklogic.com/guide/semantics[Semantics]
+
 === Triple Index
 === SPARQL
 
