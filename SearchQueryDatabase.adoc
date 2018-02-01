@@ -309,8 +309,7 @@ to copy data from the default docker machine to the Marklogic containers. From d
 
 Now, check if data folder have been copied to /tmp in ml1.local container.
 
-    docker@default:/c/Users/apastorr/MarkLogicDockerLab$ docker exec -it ml1.local b
-    ash
+    docker@default:/c/Users/apastorr/MarkLogicDockerLab$ docker exec -it ml1.local bash
     [root@ml1 /]# ls
     anaconda-post.log  dev  home  lib64  mnt  proc  run   srv  tmp  var
     bin                etc  lib   media  opt  root  sbin  sys  usr

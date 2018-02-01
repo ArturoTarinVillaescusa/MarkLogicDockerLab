@@ -14,39 +14,38 @@ toc::[]
   1) Use the MarkLogic Connector for Hadoop to export from MarkLogic databases to a Hadoop cluster
   2) Open a Spark SQL session to query the exported data, joining them with other rdd sources
 
-== https://docs.marklogic.com/guide/mapreduce/quickstart[Getting Started with the MarkLogic Connector for Hadoop in your lab cluster]
+== https://docs.marklogic.com/guide/mapreduce/quickstart[Getting Started with the MarkLogic Connector for Hadoop]
 
-***WORK IN PROGRESS***
+This chapter provides procedures for installing and configuring Apache Hadoop MapReduce and the MarkLogic Connector for Hadoop, and for running a simple MapReduce job that interacts with MarkLogic Server.
 
 === https://docs.marklogic.com/guide/mapreduce/quickstart#id_19037[Security Requirements for MapReduce Jobs]
 
-    The user with which a MapReduce job accesses MarkLogic Server must have appropriate privileges
-    for the content accessed by the job, such as permission to read or update documents in the
-    target database. Specify the user in the mapreduce.marklogic.input.username and
-    mapreduce.marklogic.output.username job configuration properties.
+The user with which a MapReduce job accesses MarkLogic Server must have appropriate privileges
+for the content accessed by the job, such as permission to read or update documents in the
+target database. Specify the user in the mapreduce.marklogic.input.username and
+mapreduce.marklogic.output.username job configuration properties.
 
-    In addition, the input and output user must use one of the pre-defined roles listed below:
+In addition, the input and output user must use one of the pre-defined roles listed below:
 
-    Role	Description
-    *hadoop-user-read*	Enables use of MarkLogic Server as an input source for a MapReduce job.
-    This role does not grant any other privileges, so the mapreduce.marklogic.input.user might
-    still require additional privileges to read content from the target database.
+Role	Description
+*hadoop-user-read*	Enables use of MarkLogic Server as an input source for a MapReduce job.
+This role does not grant any other privileges, so the mapreduce.marklogic.input.user might
+still require additional privileges to read content from the target database.
 
-    *hadoop-user-write*	Enables use of MarkLogic Server as an output destination for a MapReduce
-    job. This role does not grant any other privileges, so the mapreduce.marklogic.output.user might
-    still require additional privileges to insert or update content in the target database.
+*hadoop-user-write*	Enables use of MarkLogic Server as an output destination for a MapReduce
+job. This role does not grant any other privileges, so the mapreduce.marklogic.output.user might
+still require additional privileges to insert or update content in the target database.
 
-    *hadoop-user-all*	Combines the privileges of hadoop-user-read and hadoop-user-write.
+*hadoop-user-all*	Combines the privileges of hadoop-user-read and hadoop-user-write.
 
-    The *hadoop-internal* role is for internal use only. Do not assign this role to any users.
-    This role is used to amp special privileges within the context of certain functions of the
-    Hadoop MapReduce Connector.
+The *hadoop-internal* role is for internal use only. Do not assign this role to any users.
+This role is used to amp special privileges within the context of certain functions of the
+Hadoop MapReduce Connector.
 
-    Assigning this role to users gives them privileges on the system that you typically do not want
-    them to have.
+Assigning this role to users gives them privileges on the system that you typically do not want
+them to have.
 
 image::imagenes/imagen07.png[imagen07.png]
-
 
 === https://docs.marklogic.com/guide/mapreduce/quickstart#id_16099[Installing the MarkLogic Connector for Hadoop]
 
@@ -57,29 +56,29 @@ image::imagenes/imagen07.png[imagen07.png]
 *As soon as we get the whole loop we will make these steps into the Dockerfile, and also will rewrite this documentation accoring to the changes*
 ====
 
-  These instructions assume you have the following environment variables set:
+These instructions assume you have the following environment variables set:
 
-    HADOOP_CONF_DIR : The directory containing your Hadoop Configuration files.
-                      This location is dependent on your Hadoop distribution. For example, CDH uses
-                      /etc/hadoop/conf by default.
+HADOOP_CONF_DIR : The directory containing your Hadoop Configuration files.
+                  This location is dependent on your Hadoop distribution. For example, CDH uses
+                  /etc/hadoop/conf by default.
 
-    JAVA_HOME : The root of your JRE installation.
+JAVA_HOME : The root of your JRE installation.
 
 
 image::imagenes/imagen07.png[imagen07.png]
 
-  Use the following procedure to install the MarkLogic Connector for Hadoop. You might need to modify some of the
-  example commands, depending on your version of MarkLogic, the connector, or your Hadoop distribution.
+Use the following procedure to install the MarkLogic Connector for Hadoop. You might need to modify some of the
+example commands, depending on your version of MarkLogic, the connector, or your Hadoop distribution.
 
-  1) Download the MarkLogic Connector for Hadoop from
+1) Download the MarkLogic Connector for Hadoop from
 
-     http://developer.marklogic.com/products/hadoop
+ http://developer.marklogic.com/products/hadoop
 
-  2) Download XCC for Java from
+2) Download XCC for Java from
 
-     http://developer.marklogic.com/products/xcc
+ http://developer.marklogic.com/products/xcc
 
-  3) Create these folders in ml1.local:
+3) Create these folders in ml1.local:
 
     docker@default:~$ docker exec -it ml1.local bash
 
@@ -88,7 +87,7 @@ image::imagenes/imagen07.png[imagen07.png]
     [root@ml1 /]# mkdir /space/marklogic/mapreduce
     [root@ml1 /]# mkdir /space/marklogic/xcc
 
-  4) Upload MarkXCC.Java-9.0.3.zip and Connector-for-Hadoop2-2.2.3.zip to their respective folders
+4) Upload MarkXCC.Java-9.0.3.zip and Connector-for-Hadoop2-2.2.3.zip to their respective folders
 
     docker@default:/c/Users/atarinvi/Documents/2018-01-08 eDIN/MarkLogicDockerLab/marklogic-cluster/lib$
     docker cp Connector-for-Hadoop2-2.2.3.zip ml1.local:/space/marklogic/mapreduce
@@ -97,15 +96,15 @@ image::imagenes/imagen07.png[imagen07.png]
     docker cp MarkXCC.Java-9.0.3.zip  ml1.local:/space/marklogic/xcc
 
 
- 4) Install the unzip command and unpack the Connector-for-Hadoop2-2.2.3.zip and MarkXCC.Java-9.0.3.zip files
+5) Install the unzip command and unpack the Connector-for-Hadoop2-2.2.3.zip and MarkXCC.Java-9.0.3.zip files
 
     [root@ml1 mapreduce]# yum install unzip
 
     [root@ml1 mapreduce]# unzip Connector-for-Hadoop2-2.2.3.zip
     [root@ml1 xcc]# unzip MarkXCC.Java-9.0.3.zip
 
-  Hadoop must be configured to find the MarkLogic Connector for Hadoop libraries before you can use MarkLogic Server
-  in a MapReduce job. See Configuring Your Environment to Use the Connector.
+Hadoop must be configured to find the MarkLogic Connector for Hadoop libraries before you can use MarkLogic Server
+in a MapReduce job. See Configuring Your Environment to Use the Connector.
 
 === https://docs.marklogic.com/guide/mapreduce/quickstart#id_16099[Configuring Your Environment to Use the Connector]
 
@@ -116,9 +115,9 @@ image::imagenes/imagen07.png[imagen07.png]
 *As soon as we get the whole loop we will make these steps into the Dockerfile, and also will rewrite this documentation accoring to the changes*
 ====
 
-  Before using the MarkLogic Connector for Hadoop with your Hadoop installation for the first time, set the
-  environment variables described in this section. Only HADOOP_CLASSPATH is required, but the rest of this guide
-  assumes you set the optional variables.
+Before using the MarkLogic Connector for Hadoop with your Hadoop installation for the first time, set the
+environment variables described in this section. Only HADOOP_CLASSPATH is required, but the rest of this guide
+assumes you set the optional variables.
 
     [root@ml1 ~]# export CONNECTOR_HOME=/space/marklogic/mapreduce
     [root@ml1 ~]# export XCC_HOME=/space/marklogic/xcc
@@ -131,7 +130,6 @@ image::imagenes/imagen07.png[imagen07.png]
     /space/marklogic/mapreduce/lib/marklogic-mapreduce2-2.2.3.jar:
     /space/marklogic/xcc/lib/marklogic-xcc-9.0.3.jar
 
-
     [root@ml1 ~]# export LIBJARS=$CONNECTOR_HOME/lib/commons-modeler-2.0.1.jar,$CONNECTOR_HOME/lib/marklogic-mapreduce2-2.2.3.jar,$XCC_HOME/lib/marklogic-xcc-9.0.3.jar
 
     [root@ml1 ~]# echo $LIBJARS
@@ -139,12 +137,12 @@ image::imagenes/imagen07.png[imagen07.png]
     /space/marklogic/mapreduce/lib/marklogic-mapreduce2-2.2.3.jar,
     /space/marklogic/xcc/lib/marklogic-xcc-9.0.3.jar
 
-  Let's make a script so that everytime we open a session, the environment is configured:
+Let's make a script so that everytime we open a session, the environment is configured:
 
 
-  Hadoop MapReduce and the MarkLogic Connector for Hadoop are now ready for use.
+Hadoop MapReduce and the MarkLogic Connector for Hadoop are now ready for use.
 
-=== https://docs.marklogic.com/guide/mapreduce/quickstart#id_92175[Running the HelloWorld Sample Application]
+=== https://docs.marklogic.com/guide/mapreduce/quickstart#id_92175[Running the HelloWorld Sample Application. Connecting the MarkLogic node located in ml1.local to the Hadoop single node cluster installed in the same ml1.local node]
 
 [NOTE]
 ====
@@ -172,7 +170,8 @@ root@atarinvi:/home/atarinvi/Documentos/2018-01-17 eDIN/MarkLogicDockerLab/markl
 [root@ml1 hadoop-3.0.0]# vi etc/hadoop/hadoop-env.sh
 
 [root@ml1 hadoop-3.0.0]# etc/hadoop/hadoop-env.sh
-
+[root@ml1 hadoop-3.0.0]# mkdir input
+[root@ml1 hadoop-3.0.0]# cp etc/hadoop/*.xml input
 [root@ml1 hadoop-3.0.0]# bin/hadoop jar share/hadoop/mapreduce/hadoop-mapreduce-examples-3.0.0.jar grep input output 'dfs[a-z.]+'
 
 [root@ml1 hadoop-3.0.0]# cat output/part-r-00000
@@ -242,9 +241,8 @@ ml1.local: /space/marklogic/hadoop-3.0.0/libexec/hadoop-functions.sh: line 981: 
   105  service ssh start
   106  systemctl start ssh.service
 
----
-
-==== Run the HelloWorld Sample connecting the MarkLogic node located in ml1.local to the Hadoop single node cluster installed in the same ml1.local node
+----
+==== Run the HelloWorld Sample
 
 The following steps are covered:
 
@@ -253,7 +251,7 @@ The following steps are covered:
     Configuring the Job
     Running the Job
 
-Selecting the App Server and Database
+*Selecting the App Server and Database*
 
 The MarkLogic Connector for Hadoop requires a MarkLogic Server installation configured with an XDBC App Server. When you install MarkLogic Server, a suitable XDBC App Server attached to the Documents database comes pre-configured on port 8000.
 
@@ -264,14 +262,14 @@ However, you can choose to use a different database or App Server and database:
     To use the pre-configured App Server on port 8000 with a different database, set the com.marklogic.output.databasename configuration property when you follow the steps in Configuring the Job. (A similar property exists for overriding the default database when using MarkLogic for output.)
     To create your own XDBC App Server on a different port, attached to a different database, see the Administrator's Guide, then configure your job appropriately when you get to Configuring the Job.
 
-Loading the Sample Data
+*Loading the Sample Data*
 
 This section covers loading the sample data in two ways: Using Query Console to load the data using simple XQuery, or using the MarkLogic Content Pump (mlcp) command.
 
     Loading Sample Data with mlcp
     Loading Sample Data Manually
 
-Loading Sample Data with mlcp
+*Loading Sample Data with mlcp*
 
 MarkLogic Content Pump (mlcp) is a command line tool transferring content into or out of MarkLogic Server, or copying content between MarkLogic Server instances.
 
@@ -279,50 +277,50 @@ Before running this procedure, you should have mlcp installed and the mlcp bin/ 
 
 Follow these instructions to initialize the input database using MarkLogic Content Pump (mlcp).
 
-    Create a directory to use as your work area and cd into it. This directory can be located anywhere. For example:
+1) Create a directory to use as your work area and cd into it. This directory can be located anywhere. For example:
 
     mkdir /space/examples/hello
     cd /space/examples/hello
 
-    Create a data subdirectory to hold the sample data files. For example:
+2) Create a data subdirectory to hold the sample data files. For example:
 
     mkdir data
 
-    Create a text file called 'hello.xml' in your data directory with the contents shown below:
+3) Create a text file called 'hello.xml' in your data directory with the contents shown below:
 
     <data><child>hello mom</child></data>
 
-    For example, run the following command:
+4) For example, run the following command:
 
     cat > data/hello.xml
     <data><child>hello mom</child></data>
     ^D
 
-    Create a text file called 'world.xml' in your data directory with the contents shown below:
+5) Create a text file called 'world.xml' in your data directory with the contents shown below:
 
     <data><child>world event</child></data>
 
-    For example, run the following command:
+6) For example, run the following command:
 
     cat > data/world.xml
     <data><child>world event</child></data>
     ^D
 
-    Use mlcp to load the input files into the database you created in Selecting the App Server and Database. Use a username and password with update privileges for the input database. Use the port number of the XDBC App Server you previously created. Use the -output_uri_replace option to strip off the directory prefix from the database document URI. For example:
+7) Use mlcp to load the input files into the database you created in Selecting the App Server and Database. Use a username and password with update privileges for the input database. Use the port number of the XDBC App Server you previously created. Use the -output_uri_replace option to strip off the directory prefix from the database document URI. For example:
 
     $ mlcp.sh import -username user -password password -host localhost \
         -port 8000 -input_file_path /space/examples/hello/data \
         -output_uri_replace "/space/examples/hello/data/,''"
 
-    Optionally, use Query Console to confirmthe load: Open Query Console and click the Explore button at the top of the query editor to examine the database contents. You should see hello.xml and world.xml in the database.
+8) Optionally, use Query Console to confirmthe load: Open Query Console and click the Explore button at the top of the query editor to examine the database contents. You should see hello.xml and world.xml in the database.
 
-You can also use mlcp to load files from HDFS by specifying an HDFS path for -input_file_path. For example, if your files are in HDFS under /user/me/hello/data, then you could use the following command:
+9) You can also use mlcp to load files from HDFS by specifying an HDFS path for -input_file_path. For example, if your files are in HDFS under /user/me/hello/data, then you could use the following command:
 
 $ mlcp.sh import -username user -password password -host localhost \
     -port 8000 -input_file_path hdfs:/user/me/hello/data \
     -output_uri_replace "/user/me/hello/data/,''"
 
-Loading Sample Data Manually
+*Loading Sample Data Manually*
 
 Follow these instructions to initialize the input database with the sample documents using Query Console. For details about Query Console, see the Query Console User Guide.
 
@@ -348,7 +346,7 @@ To load the database with the sample data:
     Select Text as the output format and click Run to execute the query.
     Click the Explore button at the top of the query editor to examine the database contents. You should see hello.xml and world.xml in the database.
 
-Configuring the Job
+*Configuring the Job*
 
 Before running the HelloWorld sample job, set the connector configuration properties that identify the MarkLogic Server user and instance for input and output.
 
@@ -380,22 +378,22 @@ To configure the job:
 
 For example, if your MarkLogic installation is on localhost and you use the pre-configured App Server on port 8000 with the username and password 'my-user' and 'my-password' for input, then your input connection related property settings should be similar to the following after editing:
 
-<property>
-  <name>mapreduce.marklogic.input.username</name>
-  <value>my-user</value>
-</property>
-<property>
-  <name>mapreduce.marklogic.input.password</name>
-  <value>my-password</value>
-</property>
-<property>
-  <name>mapreduce.marklogic.input.host</name>
-  <value>localhost</value>
-</property>
-<property>
-  <name>mapreduce.marklogic.input.port</name>
-  <value>8000</value>
-</property>
+    <property>
+      <name>mapreduce.marklogic.input.username</name>
+      <value>my-user</value>
+    </property>
+    <property>
+      <name>mapreduce.marklogic.input.password</name>
+      <value>my-password</value>
+    </property>
+    <property>
+      <name>mapreduce.marklogic.input.host</name>
+      <value>localhost</value>
+    </property>
+    <property>
+      <name>mapreduce.marklogic.input.port</name>
+      <value>8000</value>
+    </property>
 
 Your output connection related property settings should have similar values.
 Running the Job
@@ -424,56 +422,183 @@ As the job runs, Hadoop reports the job progress to stdout. If the sample job do
 
 Near the end of the job output, you should see text similar to the following. Notice there are 2 map input records (hello.xml and world.xml), 2 map output records (the first word from each input record), and 1 reduce output record (HelloWorld.txt).
 
-timestamp INFO mapreduce.Job:  map 100% reduce 100%
-timestamp INFO mapreduce.Job: Job jobId completed successfully
-timestamp mapreduce.Job: Counters: 33
+        timestamp INFO mapreduce.Job:  map 100% reduce 100%
+        timestamp INFO mapreduce.Job: Job jobId completed successfully
+        timestamp mapreduce.Job: Counters: 33
         File System Counters
                 ...
-        Map-Reduce Framework
-                Map input records=2
-                Map output records=2
-                Map output bytes=20
-                Map output materialized bytes=30
-                Input split bytes=91
-                Combine input records=0
-                Combine output records=0
-                Reduce input groups=1
-                Reduce shuffle bytes=30
-                Reduce input records=2
-                Reduce output records=1
+            Map-Reduce Framework
+                    Map input records=2
+                    Map output records=2
+                    Map output bytes=20
+                    Map output materialized bytes=30
+                    Input split bytes=91
+                    Combine input records=0
+                    Combine output records=0
+                    Reduce input groups=1
+                    Reduce shuffle bytes=30
+                    Reduce input records=2
+                    Reduce output records=1
 
 Use Query Console to explore the output database and examine the output document, HelloWorld.txt. The document should contain the phrase 'hello world'.
 
 If you do not see the expected output, see the tips in Troubleshooting and Debugging.
 
+== http://docs.marklogic.com/guide/mlcp/install#id_14263[Importing and exporting data to a Hadoop cluster with mlcp tool]
+[NOTE]
+====
+*THIS IS THE SPECTED PRODUCTION SCENARIO: MARKLOGIC CLUSTER IN PRODUCTION SHOULD BE EXPECTED TO BE MOVING DATA
+   TO AND FROM A HADOOP CLUSTER (quickstart.cloudera), NOT TO A LOCAL HADOOP PROCESS!*
+====
+=== Installation
+
+Installing mlcp on ml1.local host:
+
+0) Enter to ssh ml1.local host
+
+    docker exec -it ml1.local bash
+
+1) Download mlcp from http://developer.marklogic.com/products/mlcp
+
+2) Unzip mlcp-9.0.4-bin.zip
+
+3) Put the mlcp bin directory on your path
+
+    export PATH=${PATH}:/tmp/mlcp-9.0.4-bin/mlcp-9.0.4/bin
+
+=== Configuring distributed mode
+
+4) If you plan to use mlcp in distributed mode, you must have a Hadoop installation and must configure your environment so mlcp can find your Hadoop installation.
+
+5) Upload Cloudera's QuickStart /etc/hadoop/conf folder content to ml1.local as said om
+       http://docs.marklogic.com/guide/mlcp/install#id_90074[Configuring Distributed Mode]:
+
+       [root@ml1 ~]# mkdir /etc/hadoop
+       [root@ml1 ~]# mkdir /etc/hadoop/conf
+
+       docker@default:/c/Users/atarinvi/Documents/2018-01-08 eDIN/MarkLogicDockerLab/marklogic-cluster/resources/etc/hadoop/conf$
+       docker cp README ml1.local:/etc/hadoop/conf
+
+         [root@ml1 ~]# ls -rlht /etc/hadoop/conf/
+         total 40K
+         -rwxrwxrwx 1 1000 ftp 2.4K Feb 23  2016 yarn-site.xml
+         -rwxrwxrwx 1 1000 ftp 1.1K Feb 23  2016 README
+         -rwxrwxrwx 1 1000 ftp 2.9K Feb 23  2016 hadoop-metrics.properties
+         -rwxrwxrwx 1 1000 ftp 1.4K Feb 23  2016 hadoop-env.sh
+         -rwxrwxrwx 1 1000 ftp  12K Mar 23  2016 log4j.properties
+         -rwxrwxrwx 1 1000 ftp 1.6K Apr  5  2016 mapred-site.xml
+         -rwxrwxrwx 1 1000 ftp 3.7K Apr  5  2016 hdfs-site.xml
+         -rwxrwxrwx 1 1000 ftp 1.9K Apr  5  2016 core-site.xml
+
+6) Add hostname property to yarn-site.xml file in /etc/hadoop/conf (by default it is 0.0.0.0)
+
+      <property>
+       <name>yarn.resourcemanager.hostname</name>
+        <value>quickstart.cloudera</value>
+      </property>
+
+=== Exporting data from Marklogic Server to Hadoop Cluster
+
+7) Export characters json files from star-wars database:
+
+    [root@ml1 ~]# mlcp.sh export -hadoop_conf_dir /etc/hadoop/conf -mode distributed -host 192.168.99.100 -port 8070 -username marklogic -password marklogic -output_file_path /user/cloudera/starwars -directory_filter /character/
+
+    18/02/01 10:29:28 INFO contentpump.ContentPump: Job name: distributed_177986407_1
+    18/02/01 10:29:28 INFO client.RMProxy: Connecting to ResourceManager at quickstart.cloudera/172.18.                                                                                          0.5:8032
+    18/02/01 10:29:45 INFO mapreduce.MarkLogicInputFormat: Fetched 1 forest splits.
+    18/02/01 10:29:45 INFO mapreduce.MarkLogicInputFormat: Made 1 split(s).
+    18/02/01 10:29:45 INFO mapreduce.JobSubmitter: number of splits:1
+    18/02/01 10:29:45 INFO mapreduce.JobSubmitter: Submitting tokens for job: job_1517475693323_0001
+    18/02/01 10:29:46 INFO impl.YarnClientImpl: Submitted application application_1517475693323_0001
+    18/02/01 10:29:46 INFO mapreduce.Job: The url to track the job: http://quickstart.cloudera:8088/pro                                                                                          xy/application_1517475693323_0001/
+    18/02/01 10:29:46 INFO mapreduce.Job: Running job: job_1517475693323_0001
+    18/02/01 10:30:00 INFO mapreduce.Job: Job job_1517475693323_0001 running in uber mode : false
+    18/02/01 10:30:00 INFO mapreduce.Job:  map 0% reduce 0%
+    18/02/01 10:30:09 INFO mapreduce.Job:  map 100% reduce 0%
+    18/02/01 10:30:10 INFO mapreduce.Job: Job job_1517475693323_0001 completed successfully
+    18/02/01 10:30:10 INFO mapreduce.Job: Counters: 33
+        File System Counters
+                FILE: Number of bytes read=0
+                FILE: Number of bytes written=134674
+                FILE: Number of read operations=0
+                FILE: Number of large read operations=0
+                FILE: Number of write operations=0
+                HDFS: Number of bytes read=116
+                HDFS: Number of bytes written=11202
+                HDFS: Number of read operations=1
+                HDFS: Number of large read operations=0
+                HDFS: Number of write operations=14
+        Job Counters
+                Launched map tasks=1
+                Rack-local map tasks=1
+                Total time spent by all maps in occupied slots (ms)=7325
+                Total time spent by all reduces in occupied slots (ms)=0
+                Total time spent by all map tasks (ms)=7325
+                Total vcore-seconds taken by all map tasks=7325
+                Total megabyte-seconds taken by all map tasks=7500800
+        Map-Reduce Framework
+                Map input records=14
+                Map output records=14
+                Input split bytes=116
+                Spilled Records=0
+                Failed Shuffles=0
+                Merged Map outputs=0
+                GC time elapsed (ms)=82
+                CPU time spent (ms)=740
+                Physical memory (bytes) snapshot=142995456
+                Virtual memory (bytes) snapshot=658542592
+                Total committed heap usage (bytes)=126418944
+        com.marklogic.mapreduce.MarkLogicCounter
+                ESTIMATED_INPUT_RECORDS=14
+                INPUT_RECORDS=14
+                OUTPUT_RECORDS=14
+        File Input Format Counters
+                Bytes Read=0
+        File Output Format Counters
+                Bytes Written=11202
+
+8) Check if files are in hdfs (go to quickstart.cloudera host)
+
+    [root@quickstart tmp]# hdfs dfs -ls /user/cloudera/starwars/character
+    Found 14 items
+    -rw-r--r--   1 root cloudera        940 2018-02-01 10:30 /user/cloudera/starwars                                                                                                             /character/c3po.json
+    -rw-r--r--   1 root cloudera        486 2018-02-01 10:30 /user/cloudera/starwars                                                                                                             /character/darthsidious.json
+    -rw-r--r--   1 root cloudera       1195 2018-02-01 10:30 /user/cloudera/starwars                                                                                                             /character/darthvader.json
+    -rw-r--r--   1 root cloudera        768 2018-02-01 10:30 /user/cloudera/starwars                                                                                                             /character/hansolo.json
+    -rw-r--r--   1 root cloudera        637 2018-02-01 10:30 /user/cloudera/starwars                                                                                                             /character/jarjarbinks.json
+    -rw-r--r--   1 root cloudera       1351 2018-02-01 10:30 /user/cloudera/starwars                                                                                                             /character/landocalrissian.json
+    -rw-r--r--   1 root cloudera        765 2018-02-01 10:30 /user/cloudera/starwars                                                                                                             /character/leiaorgana.json
+    -rw-r--r--   1 root cloudera        535 2018-02-01 10:30 /user/cloudera/starwars                                                                                                             /character/lorthneeda.json
+    -rw-r--r--   1 root cloudera        847 2018-02-01 10:30 /user/cloudera/starwars                                                                                                             /character/lukeskywalker.json
+    -rw-r--r--   1 root cloudera        594 2018-02-01 10:30 /user/cloudera/starwars                                                                                                             /character/macewindu.json
+    -rw-r--r--   1 root cloudera        440 2018-02-01 10:30 /user/cloudera/starwars                                                                                                             /character/maximilianveers.json
+    -rw-r--r--   1 root cloudera       1076 2018-02-01 10:30 /user/cloudera/starwars                                                                                                             /character/obiwankenobi.json
+    -rw-r--r--   1 root cloudera        690 2018-02-01 10:30 /user/cloudera/starwars                                                                                                             /character/padmeamidala.json
+    -rw-r--r--   1 root cloudera        878 2018-02-01 10:30 /user/cloudera/starwars
 
 
-=== https://docs.marklogic.com/guide/mapreduce/quickstart#id_54760[Making the Connector Available Across a Hadoop Cluster]
+== https://docs.marklogic.com/guide/mapreduce/quickstart#id_54760[Making the Connector Available Across a Hadoop Cluster]
 
 [NOTE]
 ====
 *Following vendor's documentation, adding links to the source that I've read.*
 
-*THIS IS THE SPECTED PRODUCTION SCENARIO: MARKLOGIC CLUSTER IN PRODUCTION SHOULD BE EXPECTED TO BE MOVING DATA
-   TO AND FROM A HADOOP CLUSTER, NOT TO A LOCAL HADOOP PROCESS!*
-
 *FOLLOWED A MESSY DOCUMENTATION, USED AN OPENSOURCE GIT PROJECT PROVIDED AND FOUND AN ERROR.*
 
-*STILL TRYING TO FIX IT*
+*IMPORTANT: FOLLOW THE BELOW INSTRUCTIONS ON QUICKSTART.CLOUDERA HOST*
 ====
 
+When you submit a MapReduce job to run on an Apache Hadoop cluster, the job resources must be accessible by the
+master Job Tracker node and all worker nodes. Job resources include the job JAR file, configuration files, and
+all dependent libraries. When you use the MarkLogic Connector for Hadoop in your job, this includes the
+connector and XCC JAR files.
 
-  When you submit a MapReduce job to run on an Apache Hadoop cluster, the job resources must be accessible by the
-  master Job Tracker node and all worker nodes. Job resources include the job JAR file, configuration files, and
-  all dependent libraries. When you use the MarkLogic Connector for Hadoop in your job, this includes the
-  connector and XCC JAR files.
+You must always have the job resources available on the Hadoop node where you launch the job. Depending on the
+method you use to make the job resource available across the cluster, dependent JAR files, such as the MarkLogic
+Connector for Hadoop libraries must be on the HADOOP_CLASSPATH on the node where you launch the job, as
+described in Configuring Your Environment to Use the Connector.
 
-  You must always have the job resources available on the Hadoop node where you launch the job. Depending on the
-  method you use to make the job resource available across the cluster, dependent JAR files, such as the MarkLogic
-  Connector for Hadoop libraries must be on the HADOOP_CLASSPATH on the node where you launch the job, as
-  described in Configuring Your Environment to Use the Connector.
-
-  Hadoop offers many options for making job resources available to the worker nodes, including:
+Hadoop offers many options for making job resources available to the worker nodes, including:
 
   * Using the -libjars Hadoop command line option and parsing the options in your main class using
     org.apache.hadoop.util.GenericOptionsParser.
@@ -485,10 +610,10 @@ If you do not see the expected output, see the tips in Troubleshooting and Debug
 
   * Installing required software on all nodes in the cluster.
 
-  The best solution depends upon the needs of your application and environment. See the Apache Hadoop
-  documentation for more details on making resources available across a Hadoop cluster.
+The best solution depends upon the needs of your application and environment. See the Apache Hadoop
+documentation for more details on making resources available across a Hadoop cluster.
 
-  This guide uses -libjars.
+This guide uses -libjars.
 
 ==== Accessing the Connector Source Code
 
@@ -501,7 +626,7 @@ If you do not see the expected output, see the tips in Troubleshooting and Debug
 
  *Steps to use this project:*
 
- 1) Install Java in ml1.local container:
+ 1) Install Java in quickstart.cloudera container:
 
      [root@ml1 main]# yum install java-1.8.0-openjdk
 
@@ -513,31 +638,11 @@ If you do not see the expected output, see the tips in Troubleshooting and Debug
    docker cp marklogic-contentpump-master.zip ml1.local:/space/marklogic/marklogic-contentpump
    [root@ml1 marklogic-contentpump]# unzip marklogic-contentpump-master.zip
 
-  3) Upload Cloudera's QuickStart /etc/hadoop/conf folder content to ml1.local as said om
-  http://docs.marklogic.com/guide/mlcp/install#id_90074[Configuring Distributed Mode]:
 
-  [root@ml1 ~]# mkdir /etc/hadoop
-  [root@ml1 ~]# mkdir /etc/hadoop/conf
+   4) http://docs.marklogic.com/guide/mlcp/install#id_38144[Specifying the Hadoop Configuration File Location]:
 
-  docker@default:/c/Users/atarinvi/Documents/2018-01-08 eDIN/MarkLogicDockerLab/marklogic-cluster/resources/etc/hadoop/conf$
-  docker cp README ml1.local:/etc/hadoop/conf
+     mlcp.sh command -hadoop_conf_dir /etc/hadoop/conf -Ddistributed=true
 
-    [root@ml1 ~]# ls -rlht /etc/hadoop/conf/
-    total 40K
-    -rwxrwxrwx 1 1000 ftp 2.4K Feb 23  2016 yarn-site.xml
-    -rwxrwxrwx 1 1000 ftp 1.1K Feb 23  2016 README
-    -rwxrwxrwx 1 1000 ftp 2.9K Feb 23  2016 hadoop-metrics.properties
-    -rwxrwxrwx 1 1000 ftp 1.4K Feb 23  2016 hadoop-env.sh
-    -rwxrwxrwx 1 1000 ftp  12K Mar 23  2016 log4j.properties
-    -rwxrwxrwx 1 1000 ftp 1.6K Apr  5  2016 mapred-site.xml
-    -rwxrwxrwx 1 1000 ftp 3.7K Apr  5  2016 hdfs-site.xml
-    -rwxrwxrwx 1 1000 ftp 1.9K Apr  5  2016 core-site.xml
-
-
-  4) http://docs.marklogic.com/guide/mlcp/install#id_38144[Specifying the Hadoop Configuration File Location]:
-
-    mlcp.sh command -hadoop_conf_dir /etc/hadoop/conf -Ddistributed=true
-
-    [root@ml1 main]# ./mlcp.sh import -hadoop_conf_dir /etc/hadoop/conf -Ddistributed=true --libjars $LIBJARS
-    Error: Could not find or load main class com.marklogic.contentpump.ContentPump
+     [root@ml1 main]# ./mlcp.sh import -hadoop_conf_dir /etc/hadoop/conf -Ddistributed=true --libjars $LIBJARS
+     Error: Could not find or load main class com.marklogic.contentpump.ContentPump
 
