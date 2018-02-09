@@ -111,7 +111,7 @@ in a MapReduce job. See Configuring Your Environment to Use the Connector.
 [NOTE]
 ====
 *Following vendor's documentation, adding links to the source that I've read.*
-
+e
 *As soon as we get the whole loop we will make these steps into the Dockerfile, and also will rewrite this documentation accoring to the changes*
 ====
 
@@ -464,7 +464,7 @@ Installing mlcp on ml1.local host:
 
 3) Put the mlcp bin directory on your path
 
-    export PATH=${PATH}:/tmp/mlcp-9.0.4-bin/mlcp-9.0.4/bin
+    export PATH=${PATH}:/tmp/mlcp-Hadoop2-1.3-2/bin
 
 === Configuring distributed mode
 
@@ -617,32 +617,507 @@ This guide uses -libjars.
 
 ==== Accessing the Connector Source Code
 
-  The MarkLogic Connector for Hadoop is developed and maintained as an open source project on GitHub.
-  To access the sources or contribute to the project, navigate to the following URL in your browser:
+The MarkLogic Connector for Hadoop is developed and maintained as an open source project on GitHub.
+To access the sources or contribute to the project, navigate to the following URL in your browser:
 
-  http://github.com/marklogic/marklogic-contentpump
+http://github.com/marklogic/marklogic-contentpump
 
-  The GitHub project includes both the connector and the mlcp command line tool.
+The GitHub project includes both the connector and the mlcp command line tool.
 
- *Steps to use this project:*
+*Steps to use this project:*
 
- 1) Install Java in quickstart.cloudera container:
+ [root@ml1 main]# yum install java-1.8.0-openjdk
 
-     [root@ml1 main]# yum install java-1.8.0-openjdk
-
- 2) Download the zip, put it into ml1.local and unpack it:
+2) Download the zip, put it into ml1.local and unpack it:
 
    https://github.com/marklogic/marklogic-contentpump/archive/marklogic-contentpump.zip
 
-   docker@default:/c/Users/atarinvi/Documents/2018-01-08 eDIN/MarkLogicDockerLab/marklogic-cluster/lib$
+   docker@default:/c/Users/apastorr/MarkLogicDockerLab/marklogic-cluster/lib$
    docker cp marklogic-contentpump-master.zip ml1.local:/space/marklogic/marklogic-contentpump
-   [root@ml1 marklogic-contentpump]# unzip marklogic-contentpump-master.zip
+
+   [root@ml1 marklogic]# unzip marklogic-contentpump-master.zip
+
+3) mlcp and Hadoop Connector can be built together. Steps to build:
+
+    root@ml1 marklogic]# cd marklogic-contentpump
+    root@ml1 marklogic]# mvn clean package -DskipTests=true
+
+4) The build writes to the respective deliverable directory under the top-level ./mlcp/ and ./mapreduce/ directories.
+
+    [root@quickstart marklogic-contentpump]# ls
+    CONTRIBUTING.md  LICENSE.txt  mapreduce  mlcp  pom.xml  README.md
+    [root@quickstart marklogic-contentpump]# cd mapreduce/
+    [root@quickstart mapreduce]# ls
+    deliverable  LEGALNOTICES.txt  pom.xml  src  target
+    [root@quickstart mapreduce]# cd deliverable/
+    [root@quickstart deliverable]# ls
+    Connector-for-Hadoop2-2.2.4-src.zip  Connector-for-Hadoop2-2.2.4.zip
+    [root@quickstart marklogic-contentpump]# cd mlcp
+    [root@quickstart mlcp]# ls
+    deliverable  LEGALNOTICES.txt  pom.xml  src  target
+    [root@quickstart mlcp]# cd deliverable
+    [root@quickstart deliverable]# ls
+    mlcp-9.0.4-bin.zip  mlcp-9.0.4-src.zip
+
+5) Unzip Connector-for-Hadoop2-2.2.4.zip and follow the steps described on point 1.2 and 1.3 (Installing and Configuring your environment to use the connector)
+
+6) Once you have installed and configured the Connector for Hadoop and the mlcp tool you can run mapreduces jobs using hadoop.
+
+==== https://docs.marklogic.com/guide/mapreduce/samples[Running mapreduce jobs]
 
 
-   4) http://docs.marklogic.com/guide/mlcp/install#id_38144[Specifying the Hadoop Configuration File Location]:
+===== Example 1: HelloWorld (Input Marklogic and Output Marklogic)
+[NOTE]
+====
+Reads the first word from text in input XML documents, concatentates the words, then stores the results as a new text document in MarkLogic Server.
+====
 
-     mlcp.sh command -hadoop_conf_dir /etc/hadoop/conf -Ddistributed=true
+1) Sample application HelloWord source code:
 
-     [root@ml1 main]# ./mlcp.sh import -hadoop_conf_dir /etc/hadoop/conf -Ddistributed=true --libjars $LIBJARS
-     Error: Could not find or load main class com.marklogic.contentpump.ContentPump
+HelloWord.java
 
+        package com.marklogic.mapreduce.examples;
+        import java.io.IOException;
+        import java.util.Collections;
+        import java.util.ArrayList;
+        import java.util.Iterator;
+        import org.w3c.dom.Document;
+        import org.w3c.dom.Node;
+        import org.apache.commons.logging.Log;
+        import org.apache.commons.logging.LogFactory;
+        import org.apache.hadoop.conf.Configuration;
+        import org.apache.hadoop.io.IntWritable;
+        import org.apache.hadoop.io.Text;
+        import org.apache.hadoop.mapreduce.Job;
+        import org.apache.hadoop.mapreduce.Mapper;
+        import org.apache.hadoop.mapreduce.Reducer;
+        import org.apache.hadoop.util.GenericOptionsParser;
+        import com.marklogic.mapreduce.ContentOutputFormat;
+        import com.marklogic.mapreduce.ContentType;
+        import com.marklogic.mapreduce.DatabaseDocument;
+        import com.marklogic.mapreduce.DocumentInputFormat;
+        import com.marklogic.mapreduce.DocumentURI;
+        import com.marklogic.mapreduce.MarkLogicNode;
+
+        public class HelloWorld {
+            public static class MyMapper
+            extends Mapper<DocumentURI, DatabaseDocument, IntWritable, Text> {
+                public static final Log LOG =
+                    LogFactory.getLog(MyMapper.class);
+                private final static IntWritable one = new IntWritable(1);
+                private Text firstWord = new Text();
+
+                public void map(DocumentURI key, DatabaseDocument value, Context context)
+                throws IOException, InterruptedException {
+                    if (key != null && value != null && value.getContentSize() != 0) {
+                        ContentType contentType = value.getContentType();
+                        if (contentType == ContentType.XML) {
+                            // grab the first word from the document text
+                            Document doc = (Document)value.getContentAsMarkLogicNode().get();
+                            String text = doc.getDocumentElement().getTextContent();
+                            firstWord.set(text.split(" ", 2)[0]);
+                            context.write(one, firstWord);
+                        }
+                    } else {
+                        LOG.error("key: " + key + ", value: " + value);
+                    }
+                }
+            }
+
+            public static class MyReducer
+            extends Reducer<IntWritable, Text, DocumentURI, Text> {
+                public static final Log LOG =
+                    LogFactory.getLog(MyMapper.class);
+                private Text result = new Text();
+                private static final DocumentURI outputURI =
+                    new DocumentURI("HelloWorld.txt");
+                private String allWords = new String();
+
+                public void reduce(IntWritable key, Iterable<Text> values,
+                        Context context
+                        ) throws IOException, InterruptedException {
+                    // Sort the words
+                    ArrayList<String> words = new ArrayList<String>();
+                    for (Text val : values) {
+                        words.add(val.toString());
+                    }
+                    Collections.sort(words);
+
+                    // concatenate the sorted words into a single string
+                    allWords = "";
+                    Iterator<String> iter = words.iterator();
+                    while (iter.hasNext()) {
+                        allWords += iter.next() + " ";
+                    }
+
+                    // save the final result
+                    result.set(allWords.trim());
+                    context.write(outputURI, result);
+
+                }
+            }
+
+            public static void main(String[] args) throws Exception {
+                Configuration conf = new Configuration();
+
+                String[] otherArgs = new GenericOptionsParser(conf, args).getRemainingArgs();
+                Job job = Job.getInstance(conf, "hello world");
+                job.setJarByClass(HelloWorld.class);
+
+                // Map related configuration
+                job.setInputFormatClass(DocumentInputFormat.class);
+                job.setMapperClass(MyMapper.class);
+                job.setMapOutputKeyClass(IntWritable.class);
+                job.setMapOutputValueClass(Text.class);
+
+                // Reduce related configuration
+                job.setReducerClass(MyReducer.class);
+                job.setOutputFormatClass(ContentOutputFormat.class);
+                job.setOutputKeyClass(DocumentURI.class);
+                job.setOutputValueClass(Text.class);
+
+                conf = job.getConfiguration();
+                conf.addResource("marklogic-hello-world.xml");
+
+                System.exit(job.waitForCompletion(true) ? 0 : 1);
+            }
+        }
+
+
+
+1) Edit configuration file for Marklogic input and output (Use the pre-configured XDBC App Server on port 8000)
+
+marklogic-hello-world.xml
+
+    <?xml version="1.0"?>
+    <?xml-stylesheet type="text/xsl" href="configuration.xsl"?>
+
+    <!-- Used with com.marklogic.mapreduce.examples.HelloWorld.class -->
+
+    <configuration>
+        <property>
+            <name>mapreduce.marklogic.input.username</name>
+            <value>marklogic</value>
+        </property>
+        <property>
+            <name>mapreduce.marklogic.input.password</name>
+            <value>marklogic</value>
+        </property>
+        <property>
+            <name>mapreduce.marklogic.input.host</name>
+            <value>192.168.99.100</value>
+        </property>
+        <property>
+            <name>mapreduce.marklogic.input.port</name>
+            <value>8000</value>
+        </property>
+        <property>
+        	<name>mapreduce.marklogic.input.mode</name>
+        	<value>basic</value>
+        </property>
+        <property>
+            <name>mapreduce.marklogic.input.valueclass</name>
+            <value>com.marklogic.mapreduce.DatabaseDocument</value>
+        </property>
+        <property>
+            <name>mapreduce.marklogic.output.username</name>
+            <value>marklogic</value>
+        </property>
+        <property>
+            <name>mapreduce.marklogic.output.password</name>
+            <value>marklogic</value>
+        </property>
+        <property>
+            <name>mapreduce.marklogic.output.host</name>
+            <value>192.168.99.100</value>
+        </property>
+        <property>
+            <name>mapreduce.marklogic.output.port</name>
+            <value>8080</value>
+        </property>
+        <property>
+            <name>mapreduce.marklogic.output.content.type</name>
+            <value>TEXT</value>
+        </property>
+    </configuration>
+
+
+2) From the directory where is the xml conf file, execute the mapreduce job:
+
+    hadoop jar $CONNECTOR_HOME/lib/marklogic-mapreduce2-2.2.4-examples.jar com.marklogic.mapreduce.examples.HelloWorld -libjars $LIBJARS -conf marklogic-hello-world.xml
+
+    18/02/05 14:23:17 INFO client.RMProxy: Connecting to ResourceManager at /0.0.0.0:8032
+    18/02/05 14:23:31 INFO mapreduce.MarkLogicInputFormat: Fetched 1 forest splits.
+    18/02/05 14:23:31 INFO mapreduce.MarkLogicInputFormat: Made 1 split(s).
+    18/02/05 14:23:31 INFO mapreduce.JobSubmitter: number of splits:1
+    18/02/05 14:23:31 INFO mapreduce.JobSubmitter: Submitting tokens for job: job_1517820535502_0005
+    18/02/05 14:23:32 INFO impl.YarnClientImpl: Submitted application application_1517820535502_0005
+    18/02/05 14:23:32 INFO mapreduce.Job: The url to track the job: http://quickstart.cloudera:8088/proxy/application_1517820535502_0005/
+    18/02/05 14:23:32 INFO mapreduce.Job: Running job: job_1517820535502_0005
+    18/02/05 14:23:42 INFO mapreduce.Job: Job job_1517820535502_0005 running in uber mode : false
+    18/02/05 14:23:42 INFO mapreduce.Job:  map 0% reduce 0%
+    18/02/05 14:23:51 INFO mapreduce.Job:  map 100% reduce 0%
+    18/02/05 14:24:00 INFO mapreduce.Job:  map 100% reduce 100%
+    18/02/05 14:24:01 INFO mapreduce.Job: Job job_1517820535502_0005 completed successfully
+    18/02/05 14:24:02 INFO mapreduce.Job: Counters: 52
+            File System Counters
+                    FILE: Number of bytes read=30
+                    FILE: Number of bytes written=236557
+                    FILE: Number of read operations=0
+                    FILE: Number of large read operations=0
+                    FILE: Number of write operations=0
+                    HDFS: Number of bytes read=116
+                    HDFS: Number of bytes written=0
+                    HDFS: Number of read operations=1
+                    HDFS: Number of large read operations=0
+                    HDFS: Number of write operations=0
+            Job Counters
+                    Launched map tasks=1
+                    Launched reduce tasks=1
+                    Rack-local map tasks=1
+                    Total time spent by all maps in occupied slots (ms)=6688
+                    Total time spent by all reduces in occupied slots (ms)=6511
+                    Total time spent by all map tasks (ms)=6688
+                    Total time spent by all reduce tasks (ms)=6511
+                    Total vcore-seconds taken by all map tasks=6688
+                    Total vcore-seconds taken by all reduce tasks=6511
+                    Total megabyte-seconds taken by all map tasks=6848512
+                    Total megabyte-seconds taken by all reduce tasks=6667264
+            Map-Reduce Framework
+                    Map input records=2
+                    Map output records=2
+                    Map output bytes=20
+                    Map output materialized bytes=30
+                    Input split bytes=116
+                    Combine input records=0
+                    Combine output records=0
+                    Reduce input groups=1
+                    Reduce shuffle bytes=30
+                    Reduce input records=2
+                    Reduce output records=1
+                    Spilled Records=4
+                    Shuffled Maps =1
+                    Failed Shuffles=0
+                    Merged Map outputs=1
+                    GC time elapsed (ms)=147
+                    CPU time spent (ms)=1180
+                    Physical memory (bytes) snapshot=400531456
+                    Virtual memory (bytes) snapshot=2620022784
+                    Total committed heap usage (bytes)=357765120
+            Shuffle Errors
+                    BAD_ID=0
+                    CONNECTION=0
+                    IO_ERROR=0
+                    WRONG_LENGTH=0
+                    WRONG_MAP=0
+                    WRONG_REDUCE=0
+            com.marklogic.mapreduce.MarkLogicCounter
+                    ESTIMATED_INPUT_RECORDS=2
+                    OUTPUT_RECORDS_COMMITTED=1
+                    OUTPUT_RECORDS_FAILED=0
+            File Input Format Counters
+                    Bytes Read=0
+            File Output Format Counters
+                    Bytes Written=0
+
+3) Check if the result is on the Marklogic server with the query console. HelloWorld.txt have been generated with the job result:
+
+image:imagenes/C001_images/imagen01.png[imagen01.png]
+
+image:imagenes/C001_images/imagen02.png[imagen02.png]
+
+===== Example 2: LinkCountValue (Input Marklogic and Output HDFS)
+
+[NOTE]
+====
+Counts href link titles attributes in documents in MarkLogic Server, then stores the counts in HDFS text files.
+====
+
+0 )https://docs.marklogic.com/guide/mapreduce/samples#id_8284[Additional sample data setup: create hadoop-samples database]
+
+The following samples require a special database configuration and input data set. If you do not plan to run these samples, you can skip this section.
+
+The LinkCount* samples (LinkCountInDoc, LinkCountValue, etc.)
+RevisionGrouper
+This section walks you through creating the MarkLogic Server environment required by these samples.
+
+Once you have been followed before steps you have to see in the admin and query console respectively:
+
+image:imagenes/C001_images/imagen03.png[imagen03.png]
+image:imagenes/C001_images/imagen04.png[imagen04.png]
+
+
+1) Edit the conf file of the job. It isn't necessary add output properties because the ouput is hdfs path not marklogic.
+
+    [root@quickstart linkCountValue]# vi marklogic-textin-textout.xml
+
+marklogic-textin-textout.xml
+
+    <configuration>
+        <property>
+            <name>mapreduce.marklogic.input.username</name>
+            <value>marklogic</value>
+        </property>
+        <property>
+            <name>mapreduce.marklogic.input.password</name>
+            <value>marklogic</value>
+        </property>
+        <property>
+            <name>mapreduce.marklogic.input.host</name>
+            <value>192.168.99.100</value>
+        </property>
+        <property>
+            <name>mapreduce.marklogic.input.port</name>
+            <value>8060</value>
+        </property>
+        <property>
+            <name>mapreduce.marklogic.input.databasename</name>
+            <value>hadoop-samples</value>
+        </property>
+        <property>
+            <name>mapreduce.marklogic.input.subdocumentexpr</name>
+            <value>//wp:a[@title and @href and not (fn:starts-with(@href, "#") or fn:starts-with(@href, "http://") or fn:starts-with(@href, "File:") or fn:starts-with(@href, "Image:"))]/@title</value>
+        </property>
+        <property>
+            <name>mapreduce.marklogic.input.namespace</name>
+            <value>wp,http://www.mediawiki.org/xml/export-0.4/</value>
+        </property>
+    </configuration>
+
+
+2) Execute mapreduce linkCountValue job:
+
+    [root@quickstart linkCountValue]# hadoop jar /space/marklogic/mapreduce/lib/marklogic-mapreduce2-2.2.4-examples.jar com.marklogic.mapreduce.examples.LinkCountValue -libjars ${LIBJARS}  marklogic-textin-textout.xml  /user/root/ouput
+
+    18/02/09 11:28:02 INFO client.RMProxy: Connecting to ResourceManager at /0.0.0.0:8032
+    18/02/09 11:28:04 INFO mapreduce.MarkLogicInputFormat: Fetched 2 forest splits.
+    18/02/09 11:28:04 INFO mapreduce.MarkLogicInputFormat: Made 2 split(s).
+    18/02/09 11:28:04 INFO mapreduce.JobSubmitter: number of splits:2
+    18/02/09 11:28:04 INFO mapreduce.JobSubmitter: Submitting tokens for job: job_1518168918503_0016
+    18/02/09 11:28:05 INFO impl.YarnClientImpl: Submitted application application_1518168918503_0016
+    18/02/09 11:28:05 INFO mapreduce.Job: The url to track the job: http://quickstart.cloudera:8088/proxy/application_1518168918503_0016/
+    18/02/09 11:28:05 INFO mapreduce.Job: Running job: job_1518168918503_0016
+    18/02/09 11:28:14 INFO mapreduce.Job: Job job_1518168918503_0016 running in uber mode : false
+    18/02/09 11:28:14 INFO mapreduce.Job:  map 0% reduce 0%
+    18/02/09 11:28:30 INFO mapreduce.Job:  map 100% reduce 0%
+    18/02/09 11:28:40 INFO mapreduce.Job:  map 100% reduce 100%
+    18/02/09 11:28:41 INFO mapreduce.Job: Job job_1518168918503_0016 completed successfully
+    18/02/09 11:28:41 INFO mapreduce.Job: Counters: 50
+        File System Counters
+                FILE: Number of bytes read=126579
+                FILE: Number of bytes written=607798
+                FILE: Number of read operations=0
+                FILE: Number of large read operations=0
+                FILE: Number of write operations=0
+                HDFS: Number of bytes read=230
+                HDFS: Number of bytes written=103642
+                HDFS: Number of read operations=7
+                HDFS: Number of large read operations=0
+                HDFS: Number of write operations=2
+        Job Counters
+                Launched map tasks=2
+                Launched reduce tasks=1
+                Rack-local map tasks=2
+                Total time spent by all maps in occupied slots (ms)=25635
+                Total time spent by all reduces in occupied slots (ms)=7163
+                Total time spent by all map tasks (ms)=25635
+                Total time spent by all reduce tasks (ms)=7163
+                Total vcore-seconds taken by all map tasks=25635
+                Total vcore-seconds taken by all reduce tasks=7163
+                Total megabyte-seconds taken by all map tasks=26250240
+                Total megabyte-seconds taken by all reduce tasks=7334912
+        Map-Reduce Framework
+                Map input records=6928
+                Map output records=6928
+                Map output bytes=148960
+                Map output materialized bytes=126585
+                Input split bytes=230
+                Combine input records=6928
+                Combine output records=5297
+                Reduce input groups=5192
+                Reduce shuffle bytes=126585
+                Reduce input records=5297
+                Reduce output records=5192
+                Spilled Records=10594
+                Shuffled Maps =2
+                Failed Shuffles=0
+                Merged Map outputs=2
+                GC time elapsed (ms)=400
+                CPU time spent (ms)=4270
+                Physical memory (bytes) snapshot=648654848
+                Virtual memory (bytes) snapshot=3925893120
+                Total committed heap usage (bytes)=589111296
+        Shuffle Errors
+                BAD_ID=0
+                CONNECTION=0
+                IO_ERROR=0
+                WRONG_LENGTH=0
+                WRONG_MAP=0
+                WRONG_REDUCE=0
+        com.marklogic.mapreduce.MarkLogicCounter
+                ESTIMATED_INPUT_RECORDS=93
+        File Input Format Counters
+                Bytes Read=0
+        File Output Format Counters
+                Bytes Written=103642
+
+3) Check if result is in hdfs:
+
+    [root@quickstart linkCountValue]# hdfs dfs -ls /user/root/output
+    Found 2 items
+    -rw-r--r--   1 root supergroup          0 2018-02-09 11:49 /user/root/output/_SUCCESS
+    -rw-r--r--   1 root supergroup     103642 2018-02-09 11:49 /user/root/output/part-r-00000
+
+    [root@quickstart linkCountValue]# hdfs dfs -cat /user/root/output/part-r-00000
+
+    ...
+    voluntary community     1
+    voluntaryism    2
+    von Neumann algebras    1
+    vote of no confidence   1
+    vowel   1
+    war:Abraham Lincoln     1
+    war:Alabama     1
+    war:Anarkismo   1
+    war:Antropolohiya       1
+    war:Aristóteles 1
+    war:Austrya     1
+    waste management        2
+    water management        1
+    waviness        1
+    welfare state   1
+    western film    1
+    whirling dervishes      1
+    wisdom  1
+    witchcraft      1
+    women's liberation      1
+    wood    1
+    workers' self-management        1
+    working memory  1
+    writers 1
+    wuu:奥地利      1
+    wuu:奥斯卡奖    1
+    xal:Өөстрмудн Орн Нутг  1
+    xylophone       1
+    zea:Antropolohie        1
+    zh-classical:奧地利     1
+    zh-yue:A        1
+    zh-yue:奧地利   1
+    zh-yue:奧斯卡金像獎     1
+    zh-yue:林肯     1
+    zh-yue:無政府主義       1
+    zh-yue:煉金術   1
+    zoology 2
+    ª       1
+    À nous la liberté       1
+    Æ       1
+    École des hautes études en sciences sociales    1
+    Émile Durkheim  3
+    Österreichische Basketball Bundesliga   1
+    Ötztal Alps     3
+
+
+==== https://developer.marklogic.com/blog/marklogic-spark-example[Running spark jobs]
+
+
+==== https://docs.marklogic.com/guide/admin/tiered-storage[Tiered Storage]
