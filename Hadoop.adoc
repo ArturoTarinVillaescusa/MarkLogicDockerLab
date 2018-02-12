@@ -1119,6 +1119,19 @@ marklogic-textin-textout.xml
 
 ==== https://developer.marklogic.com/blog/marklogic-spark-example[Running spark jobs]
 
+[NOTE]
+====
+The complaint XML documents are stored within a MarkLogic database. The MarkLogicWordCount application loads all the documents from the database into Spark RDD (Resilient Distributed Dataset) and performs following operations:
+
+1) Extracts XML elements as name:value pairs where element content is the value.
+
+2) Counts distinct values for each element name.
+
+3) Counts occurrences of each distinct name:value pair across the document set.
+
+4) Saves the results from step 2 and 3 into the specified HDFS target location.
+
+====
 
 1) Clone the Marklogic-Spark example git repository:
 
