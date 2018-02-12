@@ -1140,11 +1140,12 @@ marklogic-textin-textout.xml
                 <version>9.0.4</version>
             </dependency>
 
-3) Load sample data on Marklogic database with mlcp. When you import content from delimited text files, mlcp creates an XML or JSON document for each line of input after the initial header line. The default document type is XML.
+3) Load sample data on Marklogic database with mlcp. When you import content from delimited text files (csv), mlcp creates an XML or JSON document for each line of input after the initial header line. The default document type is XML.
 
     [root@quickstart conf]# mlcp.sh import -host 192.168.99.100 -port 8070 -username marklogic -password marklogic -input_file_path /space/marklogic/MarkLogicSparkExamples/sample/ConsumerComplaints.csv -mode local -input_file_type delimited_text -delimited_root_name consumer -output_uri_prefix /consumers/ -output_uri_suffix '.xml'
 
 image:imagenes/C001_images/imagen05.png[imagen05.png]
+image:imagenes/C001_images/imagen06.png[imagen06.png]
 
 4) Edit conf file with the right user, host and port:
 
@@ -1179,11 +1180,11 @@ image:imagenes/C001_images/imagen05.png[imagen05.png]
 
 5) See the MarkLogicWordCount.java class content: https://github.com/HemantPuranik/MarkLogicSparkExamples/blob/master/src/com/marklogic/spark/examples/MarkLogicWordCount.java
 
-5) Run the wordcount spark job with spark-submit:
+6) Run the wordcount spark job with spark-submit:
 
     [root@quickstart conf]# spark-submit --jars $LIBJARS --master local[2] --class com.marklogic.spark.examples.MarkLogicWordCount /space/marklogic/MarkLogicSparkExamples/target/SparkExamples-1.0-SNAPSHOT.jar /space/marklogic/MarkLogicSparkExamples/conf/marklogic-spark-count.xml /user/cloudera/mlsparkcount
 
-6) Check the result in the hdfs output path:
+7) Check the result in the hdfs output path:
 
     [root@quickstart conf]# hdfs dfs -cat /user/cloudera/mlsparkcount4/part-00000 | head
     (Company,1131)
