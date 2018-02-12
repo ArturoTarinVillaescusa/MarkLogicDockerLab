@@ -1120,4 +1120,82 @@ marklogic-textin-textout.xml
 ==== https://developer.marklogic.com/blog/marklogic-spark-example[Running spark jobs]
 
 
+1) Clone the Marklogic-Spark example git repository:
+
+    [root@quickstart conf]# git clone https://github.com/HemantPuranik/MarkLogicSparkExamples.git
+
+2) Edit pom.xml to add the right dependencies (delete before versions)
+
+     <dependencies>
+            <!-- https://mvnrepository.com/artifact/com.marklogic/marklogic-mapreduce2 -->
+            <dependency>
+                <groupId>com.marklogic</groupId>
+                <artifactId>marklogic-mapreduce2</artifactId>
+                <version>2.2.1</version>
+            </dependency>
+            <!-- https://mvnrepository.com/artifact/com.marklogic/marklogic-xcc -->
+            <dependency>
+                <groupId>com.marklogic</groupId>
+                <artifactId>marklogic-xcc</artifactId>
+                <version>9.0.4</version>
+            </dependency>
+
+3) Load sample data on Marklogic database with mlcp. When you import content from delimited text files, mlcp creates an XML or JSON document for each line of input after the initial header line. The default document type is XML.
+
+    [root@quickstart conf]# mlcp.sh import -host 192.168.99.100 -port 8070 -username marklogic -password marklogic -input_file_path /space/marklogic/MarkLogicSparkExamples/sample/ConsumerComplaints.csv -mode local -input_file_type delimited_text -delimited_root_name consumer -output_uri_prefix /consumers/ -output_uri_suffix '.xml'
+
+image:imagenes/C001_images/imagen05.png[imagen05.png]
+
+4) Edit conf file with the right user, host and port:
+
+    [root@quickstart conf]# vi marklogic-spark-count.xml
+
+    <configuration>
+        <property>
+            <name>mapreduce.marklogic.input.username</name>
+            <value>marklogic</value>
+        </property>
+        <property>
+            <name>mapreduce.marklogic.input.password</name>
+            <value>marklogic</value>
+        </property>
+        <property>
+            <name>mapreduce.marklogic.input.host</name>
+            <value>192.168.99.100</value>
+        </property>
+        <property>
+            <name>mapreduce.marklogic.input.port</name>
+            <value>8070</value>
+        </property>
+        <property>
+            <name>mapreduce.marklogic.input.mode</name>
+            <value>basic</value>
+        </property>
+        <property>
+            <name>mapreduce.marklogic.input.valueclass</name>
+            <value>com.marklogic.mapreduce.MarkLogicNode</value>
+        </property>
+    </configuration>
+
+5) See the MarkLogicWordCount.java class content: https://github.com/HemantPuranik/MarkLogicSparkExamples/blob/master/src/com/marklogic/spark/examples/MarkLogicWordCount.java
+
+5) Run the wordcount spark job with spark-submit:
+
+    [root@quickstart conf]# spark-submit --jars $LIBJARS --master local[2] --class com.marklogic.spark.examples.MarkLogicWordCount /space/marklogic/MarkLogicSparkExamples/target/SparkExamples-1.0-SNAPSHOT.jar /space/marklogic/MarkLogicSparkExamples/conf/marklogic-spark-count.xml /user/cloudera/mlsparkcount
+
+6) Check the result in the hdfs output path:
+
+    [root@quickstart conf]# hdfs dfs -cat /user/cloudera/mlsparkcount4/part-00000 | head
+    (Company,1131)
+    (Company:21st Mortgage Corporation,7)
+    (Company:3rd Generation, Inc.,2)
+    (Company:4M Collections, LLC,2)
+    (Company:AAA Collections,2)
+    (Company:ACE Cash Express Inc.,15)
+    (Company:ACS Education Services,8)
+    (Company:AES/PHEAA,57)
+    (Company:AFS Acceptance, LLC,2)
+    (Company:AMCOL Systems, Inc.,3)
+
+
 ==== https://docs.marklogic.com/guide/admin/tiered-storage[Tiered Storage]
