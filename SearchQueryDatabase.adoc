@@ -700,11 +700,5 @@ image:imagenes/C002_images/imagen47.png[imagen47.png]
 
 image:imagenes/C002_images/imagen48.png[imagen48.png]
 
-== https://docs.marklogic.com/guide/semantics[Semantics]
-
-=== Triple Index
-=== SPARQL
-
-
 == ACID transactions
 

@@ -162,7 +162,6 @@ image::imagenes/imagen05.png[imagen05.png]
 
 
 
-
 = PoC backlog
 
 == C000 Initial lab setup
@@ -194,14 +193,14 @@ image::imagenes/imagen05.png[imagen05.png]
   *Description:* This is a functional user story, and it will be solved during Iteration 2,
    starting on Wednesday January 17th
 
-  *What is included in this task:* Get to know about the integration of different data sources through Spark.
+  *What is included in this task:* Get to know about the integration of Marklogic and Hadoop.
 
 == C002 Search and query database server with built-in search
 
   *Description:* This is a functional user story, and it will be solved during Iteration 3,
    starting on Wednesday January 24th
 
-  *What is included in this task:* test of ACID transactions, REST API, RDF Triples, Bitemporality, Security.
+  *What is included in this task:* test of ACID transactions, REST API, RDF Triples, Indexes, Security.
 
   This task can be parallelized with C001
 

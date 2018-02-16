@@ -5,14 +5,16 @@ toc::[]
 
 = C001 Hadoop for storage and Compute
 
-  *Description:* This is a functional user story, and it will be solved during Iteration 2,
+*Description:* This is a functional user story, and it will be solved during Iteration 2,
    starting on Wednesday January 17th
 
-  *What is included in this task:* Get to know about the integration of different data sources through Spark.
-  To achieve this we will:
+*What is included in this task:*
 
-  1) Use the MarkLogic Connector for Hadoop to export from MarkLogic databases to a Hadoop cluster
-  2) Open a Spark SQL session to query the exported data, joining them with other rdd sources
+1) Use the MarkLogic Connector for Hadoop to export from MarkLogic databases to a Hadoop cluster
+
+2) Running a spark job using Marklogic input
+
+3) Hands on experience with tiered storage
 
 == https://docs.marklogic.com/guide/mapreduce/quickstart[Getting Started with the MarkLogic Connector for Hadoop]
 
@@ -1212,4 +1214,192 @@ image:imagenes/C001_images/imagen06.png[imagen06.png]
     (Company:AMCOL Systems, Inc.,3)
 
 
-==== https://docs.marklogic.com/guide/admin/tiered-storage[Tiered Storage]
+== https://docs.marklogic.com/guide/admin/tiered-storage[Tiered Storage]
+
+=== Hands on experience
+
+[NOTE]
+====
+Configuring a database with different forests for tired storage according the "create-time" range element index of documents.
+Using the query console with Javascript API.
+
+====
+
+1) Create a database
+
+2) Locking set to strict, that enforces mutual exclusion on existing and new documents. Avoid conclicts during data updates.
+
+3) Assignment policy set to query type
+
+4) Create tiers
+
+    * Operational
+    * Reporting
+    * Archival
+    * Default
+
+    ts.queryPartitionCreate(
+      xdmp.database('ts-db'),
+      'Reporting',
+      200,
+      1,
+      xdmp.host(),
+      '/var/opt/MarkLogic/Data/Reporting'  //directory must exist (hdfs path is accept too)
+    );
+
+5) Create range index for element 'Create-time' to be used in the queries
+
+6) Create a query-based policy for desired partitions.
+
+    * Operational = < 30 days
+    * Reporting = < 60 days
+    * Archival > 60 days
+
+7) Explore Schemas database to check queries were saved for each tier.
+   Forests that are not part of a query partition will serve as a default partition
+
+8) Insert documents:
+
+    const documents = [
+      {
+        "id" : "/doc1.json",
+        "create-time" : "2018-02-01T00:00:00",
+        "orderAction": "BUY",
+        "priceType": "LIMIT",
+        "orderTerm": "GOOD_FOR_DAY",
+        "quantity": "4",
+        "accountId": "83550325",
+        "clientOrderId": "asdfdsa12312",
+        "limitPrice": "10",
+        "stopPrice": "10"
+      }
+    ,
+      {
+        "id": "/doc2.json",
+        "create-time" : "2018-01-01T00:00:00",
+        "orderAction": "BUY",
+        "priceType": "LIMIT",
+        "orderTerm": "GOOD_FOR_DAY",
+        "quantity": "15",
+        "accountId": "78536289",
+        "clientOrderId": "gfdfdsa87778",
+        "limitPrice": "5",
+        "stopPrice": "5"
+      }
+    ,
+     {
+        "id": "/doc3.json",
+        "create-time" : "2017-11-01T00:00:00",
+        "orderAction": "BUY",
+        "priceType": "LIMIT",
+        "orderTerm": "GOOD_FOR_DAY",
+        "quantity": "100",
+        "accountId": "45309840",
+        "clientOrderId": "uutrusa67678",
+        "limitPrice": "12",
+        "stopPrice": "12"
+      }
+    ];
+
+9) Check that the forest document count:
+
+    if (xdmp.databaseName(xdmp.database()).toLowerCase() !== 'ts-db') {
+      'Please set Content Source to "ts-db" before running this code.';
+    } else {
+    const forests = {};
+    for (let forestID of xdmp.databaseForests(xdmp.database())) {
+      forests[(xdmp.forestName(forestID))] = fn.head(xdmp.forestCounts(forestID)).documentCount;
+    }
+    forests;
+    };
+
+   Operational-0001 = 1
+   Reporting-0001= 1
+   Archival-0001 = 1
+   Default-0001 = 0
+
+10) Update create-time of doc1.json:
+
+    const document = cts.doc('/doc1.json');
+    const documentObject = document.toObject();
+
+    if (xdmp.databaseName(xdmp.database()).toLowerCase() !== 'ts-db') {
+      'Please set Content Source to "ts-db" before running this code.';
+    } else {
+    documentObject['create-time'] = '2018-01-01T00:00:00';
+    xdmp.nodeReplace(document, documentObject);
+
+* When a document create-time property is updated, that document gets immediately reinserted in the correct partition.
+
+* To check to see if document will also naturally automatically move to the correct tier as they age, we will have to wait long enough
+
+* Instead you may want to change the query policies time duration to minutes and observe the documents move quicker
+
+11) Check that the forest document count:
+
+    if (xdmp.databaseName(xdmp.database()).toLowerCase() !== 'ts-db') {
+      'Please set Content Source to "ts-db" before running this code.';
+    } else {
+    const forests = {};
+    for (let forestID of xdmp.databaseForests(xdmp.database())) {
+      forests[(xdmp.forestName(forestID))] = fn.head(xdmp.forestCounts(forestID)).documentCount;
+    }
+    forests;
+    };
+
+   Operational-0001 = 0
+   Reporting-0001= 1
+   Archival-0001 = 2
+   Default-0001 = 0
+
+
+=== HDFS storage
+
+[NOTE]
+====
+HDFS storage is supported with MarkLogic on the following HDFS platform:
+
+* Cloudera CDH version 5.8
+* Hortonworks HDP version 2.4
+
+* ERROR!!!  APPLYING BELOW STEPS TO CONFIGURE HDFS STORAGE FOR MARKLOGIC IN THE QUICKSTART.CLOUDERA NODE BUT GETTING AN ERROR BECAUSE CLOUDERA VERSION IS 5.7 NOT 5.8
+
+
+====
+
+Each MarkLogic host that uses HDFS for forest storage requires access to the following:
+
+The Oracle/Sun Java JDK (or an Oracle/Sun JRE that includes JNI)
+Hadoop HDFS client JAR files
+Your Hadoop HDFS configuration files
+The following HDFS configuration property settings are required:
+
+    dfs.support.append: true. This is the default value.
+    dfs.namenode.accesstime.precision: 1
+
+The remainder of this section describes how to configure your hosts so that MarkLogic can find these components.
+
+By default, MarkLogic looks for Java in the location specified via the JAVA_HOME environment variable or in specific set of default locations. If JAVA_HOME is not set in the startup environment, then MarkLogic uses the first JRE or JDK found in one of the following locations. These locations are searched in the order listed.
+
+    /usr/java/default
+    /usr/java/latest
+    /usr/java/jdk1.N* where N is a supported Java version. For example, /usr/java/jdk1.7.0_79 qualifies if Java 7 is a supported Java version.
+    /usr/lib/jvm/java
+    /usr/lib/jvm/java-openjdk
+    /usr/lib/jvm/jre-1.N.0-*.x86_64 where N is a supported Java version, such as Java 7.
+
+Though MarkLogic does not ship with HDFS client libraries, you can download client library bundles from http://developer.marklogic.com/products/hadoop.
+
+Follow this procedure to make the bundled libraries and configuration files available to MarkLogic Server. You must follow this procedure on each MarkLogic host that uses HDFS for forest storage.
+
+Download the Hadoop client bundle that corresponds to your Hadoop distribution from http://developer.marklogic.com/products/hadoop.
+Unpack the bundle to one of the following locations: /usr, /opt, /space. For example, if you download the cdh5.8 bundle to /opt, then the following commands unpack the bundle to /opt.
+
+    cd /opt
+    gunzip hadoop-hdfs-hdp-9.0.4.tar.gz
+    tar xf hadoop-hdfs-hdp-9.0.4.tar
+
+The bundle unpacks to a directory named 'hadoop', so the above commands create /opt/hadoop/.
+
+Make your Hadoop HDFS configuration files available under /etc/hadoop/conf/. You must include at least your log4j.properties configuration file in this location.
+Ensure the libraries and config files are readable by MarkLogic.
