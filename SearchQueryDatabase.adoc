@@ -702,3 +702,123 @@ image:imagenes/C002_images/imagen48.png[imagen48.png]
 
 == ACID transactions
 
+Consider a transaction that reads or updates properties in a set of documents. If another transaction simultaneously tries to update the same set of properties, will it conflict? What if there's a system failure while a transaction is underway? MarkLogic is able to handle these tricky situations by being ACID compliant.
+
+The ACID properties are defined as follows:
+
+* Atomicity: A transaction is an atomic unit of work. Either all the data modifications in a transaction are performed or none of them are performed.
+* Consistency: When completed, a transaction leaves all data in a consistent state. The data written to the database is valid according to all defined rules.
+* Isolation: Transactions run in isolation from one another. This means that transactions running concurrently have the same result as if they were run one after the other.
+* Durability: After a transaction is completed, its effects remain even in cases of unexpected interruptions. A durable database has mechanisms to recover from system failure.
+
+Several key features enable MarkLogic to support the ACID properties:
+
+* Document locks to protect data during updates and keep transactions from conflicting with one another
+* Timestamps on documents that ensure a query only sees copies of documents that are valid at the time the query is run (also known as Multi-Version Concurrency Control)
+* Journaling of updates before they are committed to ensure transactions can be replayed in the face of system failures
+* A commit process to ensure changed data is changed all at once or not at all, even across multiple hosts
+
+[NOTE]
+
+====
+
+Demostrate transactions on Marklogic using the REST API.
+
+Our approach will be pretty simple.
+
+* Create a Transaction
+* Insert some documents
+* Commit the Transaction
+
+MarkLogic supports single and multiple document transactions. Other well known NoSQL solutions are limited to updating one document in a transaction.
+
+====
+
+1) Create the transaction
+
+    curl --anyauth --user admin:admin -X POST -d "" -i \
+      -H "Content-type: text/plain" \
+      http://localhost:8000/v1/transactions
+
+    output:
+    HTTP/1.1 303 See Created Transaction
+    Set-Cookie: HostId=2066943731304981853
+    Location: /v1/transactions/8053141704532058295
+    Server: MarkLogic
+    Content-Length: 0
+    Connection: Keep-Alive
+    Keep-Alive: timeout=5
+
+2) The new transaction ID is returned in the response Location header. We need this transaction ID for subsequent calls.
+
+    Location: /v1/transactions/8053141704532058295
+
+3) Insert a document:
+
+    curl --anyauth --user admin:admin -X PUT -d '{"hello":"world"}' -i \
+      -H "Content-type: application/json" \
+      "http://localhost:8000/v1/documents?uri=/hello-world.json&txid=8053141704532058295"
+
+4) Insert a second document:
+
+    curl --anyauth --user admin:admin -X PUT -d '{"goodbye":"world"}' -i \
+      -H "Content-type: application/json" \
+      "http://localhost:8000/v1/documents?uri=/goodbye-world.json&txid=8053141704532058295"
+
+5) Check if documents are available for use:
+
+    curl --anyauth --user admin:admin -X GET -i \
+      -H "Accept: multipart/mixed; boundary=document-part-boundary" \
+      "http://localhost:8000/v1/documents?uri=/hello-world.json&uri=/goodbye-world.json"
+
+    output is empty:
+
+    HTTP/1.1 200 OK
+    Content-type: multipart/mixed; boundary=document-part-boundary
+    Server: MarkLogic
+    Content-Length: 0
+    Connection: Keep-Alive
+    Keep-Alive: timeout=5
+
+6) Now let's commit the transaction:
+
+    curl --anyauth --user ${USER}:${PASSWORD} -X POST -d "" -i \
+      -H "Content-type: text/plain"  \
+      http://localhost:8000/v1/transactions/8053141704532058295?result=commit
+
+     output:
+
+     HTTP/1.1 204 Committed
+     Server: MarkLogic
+     Content-Length: 0
+     Connection: Keep-Alive
+     Keep-Alive: timeout=5
+
+7) Confirm that docuements are in the database now:
+
+    curl --anyauth --user admin:admin -X GET -i \
+      -H "Accept: multipart/mixed; boundary=document-part-boundary" \
+      "http://localhost:8000/v1/documents?uri=/hello-world.json&uri=/goodbye-world.json"
+
+    output:
+
+    HTTP/1.1 200 OK
+    Content-type: multipart/mixed; boundary=document-part-boundary
+    Server: MarkLogic
+    Content-Length: 418
+    Connection: Keep-Alive
+    Keep-Alive: timeout=5
+
+    --document-part-boundary
+    Content-Type: application/json
+    Content-Disposition: attachment; filename="/hello-world.json"; category=content; format=json
+    Content-Length: 17
+
+    {"hello":"world"}
+    --document-part-boundary
+    Content-Type: application/json
+    Content-Disposition: attachment; filename="/goodbye-world.json"; category=content; format=json
+    Content-Length: 19
+
+    {"goodbye":"world"}
+    --document-part-boundary--

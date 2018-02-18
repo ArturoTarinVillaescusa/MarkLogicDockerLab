@@ -1227,9 +1227,17 @@ Using the query console with Javascript API.
 
 1) Create a database
 
+image:imagenes/C001_images/imagen07.png[imagen07.png]
+
+
 2) Locking set to strict, that enforces mutual exclusion on existing and new documents. Avoid conclicts during data updates.
 
+image:imagenes/C001_images/imagen08.png[imagen08.png]
+
 3) Assignment policy set to query type
+
+image:imagenes/C001_images/imagen09.png[imagen09.png]
+image:imagenes/C001_images/imagen15.png[imagen15.png]
 
 4) Create tiers
 
@@ -1247,7 +1255,15 @@ Using the query console with Javascript API.
       '/var/opt/MarkLogic/Data/Reporting'  //directory must exist (hdfs path is accept too)
     );
 
+image:imagenes/C001_images/imagen10.png[imagen10.png]
+image:imagenes/C001_images/imagen17.png[imagen17.png]
+
+
 5) Create range index for element 'Create-time' to be used in the queries
+
+image:imagenes/C001_images/imagen11.png[imagen11.png]
+image:imagenes/C001_images/imagen16.png[imagen16.png]
+
 
 6) Create a query-based policy for desired partitions.
 
@@ -1255,8 +1271,11 @@ Using the query console with Javascript API.
     * Reporting = < 60 days
     * Archival > 60 days
 
+image:imagenes/C001_images/imagen12.png[imagen12.png]
+
 7) Explore Schemas database to check queries were saved for each tier.
    Forests that are not part of a query partition will serve as a default partition
+
 
 8) Insert documents:
 
@@ -1300,6 +1319,8 @@ Using the query console with Javascript API.
         "stopPrice": "12"
       }
     ];
+
+image:imagenes/C001_images/imagen13.png[imagen13.png]
 
 9) Check that the forest document count:
 
@@ -1352,6 +1373,7 @@ Using the query console with Javascript API.
    Archival-0001 = 2
    Default-0001 = 0
 
+image:imagenes/C001_images/imagen14.png[imagen14.png]
 
 === HDFS storage
 
